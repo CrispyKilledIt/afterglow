@@ -1,14 +1,15 @@
 # afterglow (web)
 
-Kernel exploit for the PlayStation 4 on firmware **13.00, 13.02, 13.04, 13.50,
-13.52 and 14.00**, run from the console's own browser. It leaves the kernel
-readable and writable, `uid 0`, `mmap` handing out RWX and `syscall 11` as a
-kexec gate — so the usual payloads work as they do after any other kernel
-exploit.
+Kernel exploit for the PlayStation 4 on firmware **12.00, 12.02, 12.50, 12.52,
+13.00, 13.02, 13.04, 13.50, 13.52 and 14.00**, run from the console's own
+browser. It leaves the kernel readable and writable, `uid 0`, `mmap` handing
+out RWX and `syscall 11` as a kexec gate — so the usual payloads work as they
+do after any other kernel exploit.
 
 ## You need
 
-* PS4 on firmware 13.00, 13.02, 13.04, 13.50, 13.52 or 14.00, on your network
+* PS4 on firmware 12.00, 12.02, 12.50, 12.52, 13.00, 13.02, 13.04, 13.50,
+  13.52 or 14.00, on your network
 * A machine on the same network with `python3`
 
 Nothing is installed on the console. The pages are static files.
@@ -33,7 +34,7 @@ off again with nobody watching.
 |---|---|
 | `hen.bin` | ps4-hen `pre-release-main-182`, **already patched** (see below) |
 | `goldhen.bin` | GoldHEN, included with the author's permission |
-| `patchset-1300.bin` … `patchset-1400.bin` | the kernel patches GoldHEN expects to find, one set per firmware |
+| `patchset-1200.bin` … `patchset-1400.bin` | the kernel patches GoldHEN expects to find, one set per firmware |
 | `afterglow.js` | this work |
 | `jb.js`, `ps4_offsets.js` | the raw13g host, trimmed |
 | `core.js`, `mem.js`, `int64.js` | the in-process primitive, by way of that host |
@@ -62,9 +63,10 @@ Expect to repeat one now and then. Ten hand-run rounds on 14.00 landed nine
 times; a failure in the WebKit stage costs nothing, so going again is cheap.
 13.52 has fewer runs behind it and no number worth quoting yet.
 
-**All six firmwares are confirmed on hardware.** 13.04 ran here on
+**All ten firmwares are confirmed on hardware.** 13.04 ran here on
 05.11.2026 — first attempt, `uid 0`, payload started. 13.00, 13.02 and 13.50
-were confirmed by testers on 06.11.2026.
+were confirmed by testers on 06.11.2026, and 12.00, 12.02, 12.50 and 12.52
+on 07.11.2026.
 
 The page tells you which of these happened.
 
@@ -100,7 +102,7 @@ which model and firmware you tried.
 * **jordyidk** — [slopkit](https://github.com/jordyidk/slopkit), the PS5
   jailbreak the in-process primitive (`core.js`, `mem.js`, `int64.js`)
   descends from
-* **John** — [janisslsm](https://github.com/janisslsm), testing 13.xx
+* **John** — [janisslsm](https://github.com/janisslsm), testing 12.xx and 13.xx
 * **Shiroe Galleu** — testing 13.02
 * **al-azif** — <https://github.com/al-azif/>
 * **SiSTRo** — GoldHEN
