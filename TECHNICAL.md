@@ -116,6 +116,14 @@ slopkit carries no license file, and raw13g's MIT license names these three as
 third-party rather than relicensing them, so no grant reaches them from either
 side.
 
+## The firmware tables
+
+Every address afterglow hardcodes lives in a per-firmware table, chosen by
+`setFirmware()` before anything is touched; a firmware with no table is
+refused rather than run with someone else's offsets.
+
+Every firmware in the table has been confirmed on hardware.
+
 ## Scope
 
 The kernel patch lives until the console reboots. Nothing here persists.

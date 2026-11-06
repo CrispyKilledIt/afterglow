@@ -17,7 +17,6 @@ var countEl = document.getElementById("count");
 var cacheEl = document.getElementById("cache");
 var ticker = null;
 var waitingForCache = false;
-var cacheTimer = null;
 var gone = false;
 
 /* How long the start may wait for the cache before it goes anyway.
@@ -28,7 +27,6 @@ var gone = false;
  * case here, not an edge case: the files are already on disk, and a run
  * from them is exactly as good. So the wait is a courtesy with an upper
  * bound, never a gate. */
-var CACHE_WAIT_MS = 4000;
 
 /* The offline cache, and the one state that must not be run through.
  *
@@ -66,6 +64,10 @@ function cacheNote() {
     else if (appCache.status === appCache.DOWNLOADING) text = "loading files - hold on";
     else if (appCache.status === appCache.UPDATEREADY) text = "a newer version is cached - reopen this page to use it";
     else if (appCache.status === appCache.OBSOLETE) text = "the cache was dropped - the server answers directly";
+    /* Not a reason to refuse -- it works wherever the server answers. But it
+       means the manifest was not accepted, and offline that is the state in
+       which a fetch stalls instead of failing, so say it out loud. */
+    else if (appCache.status === appCache.UNCACHED) text = "no offline cache - the manifest was not accepted";
   } catch (e) {}
   cacheEl.textContent = text;
 }
@@ -125,7 +127,6 @@ function picked() {
 function go() {
   if (gone) return;
   gone = true;
-  if (cacheTimer !== null) { clearTimeout(cacheTimer); cacheTimer = null; }
   location.href = "jb.html?" + TARGET[picked()];
 }
 
@@ -135,19 +136,15 @@ function offline() {
 
 function start() {
   stopClock();
-  /* Not a refusal -- a bounded wait. The run begins by itself once the files
-     are in, and at the latest after CACHE_WAIT_MS. Offline it does not wait
-     at all: there is nothing to wait for. */
+  /* Not a refusal -- a wait that ends by itself. Starting while the manifest
+     is being checked or fetched can mix two builds, so there is no deadline
+     here that would run through that state: the cache events call back in
+     and the run begins the moment the files are in. Offline it does not wait
+     at all, because then there is nothing to wait for. */
   if (!offline() && cacheBusy()) {
     waitingForCache = true;
     countEl.textContent = "waiting for the cache";
     cacheNote();
-    if (cacheTimer === null) {
-      cacheTimer = setTimeout(function () {
-        cacheTimer = null;
-        if (!gone) { countEl.textContent = "cache did not answer - going anyway"; go(); }
-      }, CACHE_WAIT_MS);
-    }
     return;
   }
   go();
@@ -165,6 +162,14 @@ function startClock() {
   var left = AUTOSTART_SECONDS;
   countEl.textContent = "starting in " + left + "s";
   ticker = setInterval(function () {
+    /* Hold, do not overtake: while the cache is moving the clock stands
+       still and picks up where it left off once the files are in. The old
+       behaviour let it run out mid-download and started anyway. */
+    if (!offline() && cacheBusy()) {
+      countEl.textContent = "cache is loading - start held";
+      cacheNote();
+      return;
+    }
     left -= 1;
     if (left <= 0) {
       start();

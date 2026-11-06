@@ -18,7 +18,8 @@ cd "$(dirname "$0")"
 OUT=cache.appcache
 FILES="index.html jb.html style.css launch.js meme.png
        jb.js core.js mem.js int64.js ps4_offsets.js afterglow.js
-       patchset-1400.bin patchset-1352.bin hen.bin goldhen.bin"
+       patchset-1300.bin patchset-1302.bin patchset-1304.bin patchset-1350.bin
+       patchset-1352.bin patchset-1400.bin hen.bin goldhen.bin"
 
 {
   echo "CACHE MANIFEST"
@@ -29,6 +30,16 @@ FILES="index.html jb.html style.css launch.js meme.png
     [ -f "$f" ] || { echo "missing: $f" >&2; exit 1; }
     printf '%s #%s\n' "$f" "$(sha256sum "$f" | cut -c1-32)"
   done
+  echo
+  # The run page is reached as jb.html?mode=... or jb.html?payload=..., and
+  # the cache matches URLs INCLUDING the query string -- so neither of those
+  # is the cached `jb.html`. Online they slip in as master entries, which is
+  # why whichever payload was picked last keeps working offline and the other
+  # one does not. The fallback serves the cached page for any jb.html?... the
+  # cache has not seen; location keeps the query, so the page still reads its
+  # own parameters.
+  echo "FALLBACK:"
+  echo "jb.html jb.html"
   echo
   echo "NETWORK:"
   echo "*"
