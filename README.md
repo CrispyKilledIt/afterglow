@@ -6,6 +6,8 @@ browser. It leaves the kernel readable and writable, `uid 0`, `mmap` handing
 out RWX and `syscall 11` as a kexec gate — so the usual payloads work as they
 do after any other kernel exploit.
 
+afterglow is not Lapse.
+
 ## You need
 
 * PS4 on firmware 12.00, 12.02, 12.50, 12.52, 13.00, 13.02, 13.04, 13.50,
