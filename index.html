@@ -96,6 +96,8 @@
             flex-direction: column;
             box-shadow: 0 8px 24px rgba(0,0,0,0.6);
             backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
         }
 
         .category-panel h2 {
@@ -105,27 +107,48 @@
             color: #fff;
             border-left: 3px solid var(--neon-blue);
             padding-left: 8px;
+            align-self: flex-start;
         }
 
-        /* Afterglow Config Selection Items */
+        .cyber-logo-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            flex: 1;
+        }
+
+        .cyber-logo-container img {
+            max-height: 140px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.2));
+            animation: pulseGlow 4s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { filter: drop-shadow(0 0 5px rgba(0, 240, 255, 0.2)); opacity: 0.95; }
+            50% { filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.5)); opacity: 1; }
+        }
+
         .pick {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            flex: 1;
-            justify-content: center;
+            gap: 10px;
+            width: 100%;
         }
 
         .opt {
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(0, 240, 255, 0.2);
-            padding: 12px 15px;
+            padding: 11px 15px;
             border-radius: 4px;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 12px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             color: #fff;
             transition: all 0.2s ease;
@@ -138,8 +161,8 @@
 
         .opt input[type="radio"], .opt input[type="checkbox"] {
             accent-color: var(--neon-blue);
-            width: 16px;
-            height: 16px;
+            width: 15px;
+            height: 15px;
         }
 
         .opt-auto {
@@ -157,26 +180,22 @@
             background: rgba(255, 0, 127, 0.1);
             border: 1px solid var(--neon-pink);
             color: #fff;
-            padding: 15px;
+            padding: 14px;
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             letter-spacing: 2px;
             cursor: pointer;
             text-transform: uppercase;
             box-shadow: 0 0 10px rgba(255, 0, 127, 0.2);
             transition: all 0.25s ease;
-            margin-top: 10px;
+            margin-top: 5px;
         }
 
         .btn:hover {
             background: rgba(255, 0, 127, 0.25);
             box-shadow: 0 0 15px var(--neon-pink);
             transform: translateY(-1px);
-        }
-
-        .btn:active {
-            transform: translateY(1px);
         }
 
         .sidebar {
@@ -199,7 +218,6 @@
             padding-left: 8px;
         }
 
-        /* Afterglow Engine Output Hooks */
         .output-container {
             flex: 1;
             background: rgba(0, 0, 0, 0.5);
@@ -220,26 +238,12 @@
             word-break: break-all;
         }
         
-        #count {
-            color: var(--neon-blue);
-            text-shadow: 0 0 5px rgba(0, 240, 255, 0.3);
-        }
-
-        #cache {
-            color: #00ff66;
-        }
-
-        .byline {
-            position: absolute;
-            bottom: 15px;
-            right: 35px;
-            font-size: 11px;
-            color: rgba(255,255,255,0.2);
-            letter-spacing: 1px;
-        }
+        #count { color: var(--neon-blue); text-shadow: 0 0 5px rgba(0, 240, 255, 0.3); }
+        #cache { color: #00ff66; }
+        .byline { position: absolute; bottom: 15px; right: 35px; font-size: 11px; color: rgba(255,255,255,0.2); letter-spacing: 1px; }
     </style>
-</head>
-<body>
+  </head>
+  <body>
 
     <header>
         <div class="title-container">
@@ -254,20 +258,24 @@
             <div class="category-panel">
                 <h2>PAYLOAD CONFIGURATION</h2>
                 
-                <!-- Native Afterglow processing form element structure -->
+                <div class="cyber-logo-container">
+                    <!-- Configured to look for logo.png in your repository folder -->
+                    <img src="logo.png" alt="System Emblem"/>
+                </div>
+
                 <form class="pick" id="pick">
                     <label class="opt">
                         <input type="radio" name="payload" value="hen" />
-                        <span>ps4-hen</span>
+                        <span>ps4-hen Framework</span>
                     </label>
                     <label class="opt">
                         <input type="radio" name="payload" value="goldhen" checked />
-                        <span>GoldHEN Layer</span>
+                        <span>GoldHEN Core Engine</span>
                     </label>
 
                     <label class="opt opt-auto">
                         <input type="checkbox" id="auto" checked />
-                        <span>Autostart Execution Engine</span>
+                        <span>Autostart Execution Sequence</span>
                     </label>
 
                     <button class="btn" type="submit">Initialize Staging</button>
@@ -276,10 +284,10 @@
 
             <div class="category-panel">
                 <h2>SYSTEM INFRASTRUCTURE</h2>
-                <div style="display: flex; flex-direction: column; gap: 10px; height: 100%; justify-content: center; opacity: 0.6;">
-                    <div class="opt" style="cursor: default;"><span>WebKit Core Sandbox: Operational</span></div>
-                    <div class="opt" style="cursor: default;"><span>Payload Map Allocator: Enabled</span></div>
-                    <div class="opt" style="cursor: default;"><span>Offline Appcache State: Ready</span></div>
+                <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; justify-content: center; opacity: 0.65;">
+                    <div class="opt" style="cursor: default;"><span>WebKit Userland Matrix: Stable</span></div>
+                    <div class="opt" style="cursor: default;"><span>Payload Vector Mapping: Ready</span></div>
+                    <div class="opt" style="cursor: default;"><span>Offline Application Cache: Active</span></div>
                 </div>
             </div>
         </div>
@@ -287,7 +295,6 @@
         <div class="sidebar">
             <h2>REALTIME MATRIX CONSOLE</h2>
             <div class="output-container">
-                <!-- Hook elements where launch.js sends staging outputs -->
                 <p class="count" id="count">Awaiting script initialize submission sequence...</p>
                 <p class="count" id="cache" aria-live="polite"></p>
             </div>
@@ -296,19 +303,10 @@
 
     <p class="byline">ui modification // core mechanics by well0nez/m0zz</p>
     
-    <!-- Hooks original exploit handler parameters securely -->
     <script src="launch.js"></script>
     <script>
-        // Synchronizes header alert mechanics with form actions
         const formEl = document.getElementById('pick');
         if(formEl) {
             formEl.addEventListener('submit', function() {
                 const statusBox = document.getElementById('status-display');
                 statusBox.innerHTML = "INJECTING EXPLOIT CHAIN...";
-                statusBox.style.borderColor = "var(--neon-blue)";
-                statusBox.style.textShadow = "0 0 10px var(--neon-blue)";
-            });
-        }
-    </script>
-</body>
-</html>
