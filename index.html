@@ -3,44 +3,312 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>afterglow</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <!-- Every run starts from here. The referrer guard in jb.js arms the chain
-         only when it was reached from this page, so that a browser restoring
-         its last session cannot re-run it unattended. -->
-    <div id="brand"><b>afterglow</b></div>
+    <title>ORBIS OS // 14.00 AFTERGLOW LAYER</title>
+    <style>
+        :root {
+            --bg-color: #05050a;
+            --panel-bg: rgba(12, 12, 24, 0.85);
+            --neon-blue: #00f0ff;
+            --neon-pink: #ff007f;
+            --text-color: #d8d8f0;
+        }
 
-    <div class="shell">
-      <img class="meme" src="meme.png" alt="" />
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            -webkit-user-select: none;
+        }
 
-      <main class="panel">
-        <p class="lede">PS4 firmware 12.00 &ndash; 14.00 <span class="soon">&middot; 14.02 soon</span></p>
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 240, 255, 0.12) 0px, transparent 40%),
+                radial-gradient(at 100% 100%, rgba(255, 0, 127, 0.12) 0px, transparent 40%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-        <form class="pick" id="pick">
-          <label class="opt">
-            <input type="radio" name="payload" value="hen" />
-            <span>ps4-hen</span>
-          </label>
-          <label class="opt">
-            <input type="radio" name="payload" value="goldhen" checked />
-            <span>GoldHEN</span>
-          </label>
+        header {
+            background: linear-gradient(90deg, #0e0e1a, #07070f);
+            padding: 15px 30px;
+            border-bottom: 2px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-          <label class="opt opt-auto">
-            <input type="checkbox" id="auto" checked />
-            <span>autostart</span>
-          </label>
+        .title-container h1 {
+            font-size: 22px;
+            letter-spacing: 3px;
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
 
-          <button class="btn" type="submit">start</button>
-          <p class="count" id="count"></p>
-          <p class="count" id="cache" aria-live="polite"></p>
-        </form>
-      </main>
-    </div>
+        .title-container p {
+            font-size: 11px;
+            color: var(--neon-pink);
+            letter-spacing: 2px;
+            margin-top: 3px;
+            font-weight: bold;
+        }
 
-    <p class="byline">by well0nez/m0zz</p>
+        #status-display {
+            background: #000;
+            border: 1px solid var(--neon-pink);
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            color: #fff;
+            text-shadow: 0 0 5px var(--neon-pink);
+            min-width: 280px;
+            text-align: center;
+            box-shadow: inset 0 0 10px rgba(255, 0, 127, 0.15);
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            height: calc(100vh - 75px);
+        }
+
+        .menu-grid {
+            flex: 3;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .category-panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+        }
+
+        .category-panel h2 {
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            color: #fff;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 8px;
+        }
+
+        /* Afterglow Config Selection Items */
+        .pick {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .opt {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            padding: 12px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            transition: all 0.2s ease;
+        }
+
+        .opt:hover {
+            background: rgba(0, 240, 255, 0.05);
+            border-color: var(--neon-blue);
+        }
+
+        .opt input[type="radio"], .opt input[type="checkbox"] {
+            accent-color: var(--neon-blue);
+            width: 16px;
+            height: 16px;
+        }
+
+        .opt-auto {
+            border-color: rgba(255, 0, 127, 0.2);
+        }
+        .opt-auto:hover {
+            background: rgba(255, 0, 127, 0.05);
+            border-color: var(--neon-pink);
+        }
+        .opt-auto input {
+            accent-color: var(--neon-pink);
+        }
+
+        .btn {
+            background: rgba(255, 0, 127, 0.1);
+            border: 1px solid var(--neon-pink);
+            color: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.2);
+            transition: all 0.25s ease;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: rgba(255, 0, 127, 0.25);
+            box-shadow: 0 0 15px var(--neon-pink);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .sidebar {
+            flex: 1.1;
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar h2 {
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            color: #fff;
+            border-left: 3px solid var(--neon-pink);
+            padding-left: 8px;
+        }
+
+        /* Afterglow Engine Output Hooks */
+        .output-container {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 4px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #8a8aab;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .count {
+            line-height: 1.6;
+            word-break: break-all;
+        }
+        
+        #count {
+            color: var(--neon-blue);
+            text-shadow: 0 0 5px rgba(0, 240, 255, 0.3);
+        }
+
+        #cache {
+            color: #00ff66;
+        }
+
+        .byline {
+            position: absolute;
+            bottom: 15px;
+            right: 35px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.2);
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title-container">
+            <h1>AFTERGLOW SYSTEM HUB</h1>
+            <p>FIRMWARE 12.00 &ndash; 14.00 STAGING ACTIVE</p>
+        </div>
+        <div id="status-display">SYSTEM ENGINE: IDLE</div>
+    </header>
+
+    <main>
+        <div class="menu-grid">
+            <div class="category-panel">
+                <h2>PAYLOAD CONFIGURATION</h2>
+                
+                <!-- Native Afterglow processing form element structure -->
+                <form class="pick" id="pick">
+                    <label class="opt">
+                        <input type="radio" name="payload" value="hen" />
+                        <span>ps4-hen</span>
+                    </label>
+                    <label class="opt">
+                        <input type="radio" name="payload" value="goldhen" checked />
+                        <span>GoldHEN Layer</span>
+                    </label>
+
+                    <label class="opt opt-auto">
+                        <input type="checkbox" id="auto" checked />
+                        <span>Autostart Execution Engine</span>
+                    </label>
+
+                    <button class="btn" type="submit">Initialize Staging</button>
+                </form>
+            </div>
+
+            <div class="category-panel">
+                <h2>SYSTEM INFRASTRUCTURE</h2>
+                <div style="display: flex; flex-direction: column; gap: 10px; height: 100%; justify-content: center; opacity: 0.6;">
+                    <div class="opt" style="cursor: default;"><span>WebKit Core Sandbox: Operational</span></div>
+                    <div class="opt" style="cursor: default;"><span>Payload Map Allocator: Enabled</span></div>
+                    <div class="opt" style="cursor: default;"><span>Offline Appcache State: Ready</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <h2>REALTIME MATRIX CONSOLE</h2>
+            <div class="output-container">
+                <!-- Hook elements where launch.js sends staging outputs -->
+                <p class="count" id="count">Awaiting script initialize submission sequence...</p>
+                <p class="count" id="cache" aria-live="polite"></p>
+            </div>
+        </div>
+    </main>
+
+    <p class="byline">ui modification // core mechanics by well0nez/m0zz</p>
+    
+    <!-- Hooks original exploit handler parameters securely -->
     <script src="launch.js"></script>
-  </body>
+    <script>
+        // Synchronizes header alert mechanics with form actions
+        const formEl = document.getElementById('pick');
+        if(formEl) {
+            formEl.addEventListener('submit', function() {
+                const statusBox = document.getElementById('status-display');
+                statusBox.innerHTML = "INJECTING EXPLOIT CHAIN...";
+                statusBox.style.borderColor = "var(--neon-blue)";
+                statusBox.style.textShadow = "0 0 10px var(--neon-blue)";
+            });
+        }
+    </script>
+</body>
 </html>
