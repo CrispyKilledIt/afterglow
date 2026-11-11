@@ -1292,7 +1292,7 @@ async function sendNexHENToElfLoader() {
       const probe = await fetch(probeURL, { cache: "no-store" });
       const probeText = await probe.text();
 
-      if (probe.ok && probeText.indexOf("Error reading URI payload") !== -1) {
+      if (probe.ok && probeText.indexOf("Unsupported protocol") !== -1) {
         say("[elfldr] server ready; sending NexHEN RC6");
         const response = await fetch(payloadURL, { cache: "no-store" });
         const result = await response.text();
