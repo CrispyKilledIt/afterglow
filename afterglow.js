@@ -2362,12 +2362,15 @@ async function attempt(ctx, opts) {
       : "the handles are NOT defused -- do not let this page close");
 
   const want = (ctx.params && ctx.params.get("payload"));
-  const mode = (ctx.params && ctx.params.get("mode")) || "";
-  if (want !== "") {
-    iface.payload = (mode === "goldhen")
-      ? await loadEnabler(want || "goldhen.bin", k, kbase, hostFree)
-      : await loadPayload(want || "hen.bin");
-  }
+const mode = (ctx.params && ctx.params.get("mode")) || "";
+
+if (mode === "elfldr_test") {
+  iface.payload = await loadElfLoader("elfldr.bin");
+} else if (want !== "") {
+  iface.payload = (mode === "goldhen")
+    ? await loadEnabler(want || "goldhen.bin", k, kbase, hostFree)
+    : await loadPayload(want || "hen.bin");
+}
   say("done -- jailbroken, rwx open, syscall 11 is a kexec gate"
       + (iface.payload ? ", enabler running" : ""));
   return iface;
