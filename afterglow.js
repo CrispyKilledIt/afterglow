@@ -1281,46 +1281,16 @@ const NEXHEN_RC6_URL =
   "https://raw.githubusercontent.com/CrispyKilledIt/afterglow/main/nexHEN.-rc6-codxelf.elf";
 
 async function sendNexHENToElfLoader() {
-  const urls = [
-    "http://127.0.0.1:9021",
-    "http://192.168.1.102:9021"
-  ];
-
   const payloadURL =
-    "https://raw.githubusercontent.com/CrispyKilledIt/afterglow/main/nexHEN.-rc6-codxelf.elf";
+    "http://192.168.1.102:9021/?uri=" +
+    encodeURIComponent(NEXHEN_RC6_URL);
 
-  for (let n = 1; n <= 20; n++) {
-    for (const base of urls) {
-      try {
-        const probe = await fetch(
-          base + "/?uri=probe%3A%2F%2Fnot-a-payload",
-          { cache: "no-store" }
-        );
+  say("[elfldr] navigating directly to ELF loader");
+  say("[elfldr] sending NexHEN RC6");
 
-        const result = await probe.text();
-
-        if (result.indexOf("Unsupported protocol") !== -1) {
-          say("[elfldr] connected through " + base);
-          say("[elfldr] sending NexHEN RC6");
-
-          const response = await fetch(
-            base + "/?uri=" + encodeURIComponent(payloadURL),
-            { cache: "no-store" }
-          );
-
-          const message = await response.text();
-
-          if (message) say("[elfldr] " + message.trim());
-
-          return response.ok &&
-            !/Error (reading|spawning)|malformed ELF/i.test(message);
-        }
-      } catch (e) {
-        say("[elfldr] " + base + ": " +
-          (e && e.message ? e.message : String(e)));
-      }
-    }
-
+  window.location.assign(payloadURL);
+  return true;
+}
     await new Promise(resolve => setTimeout(resolve, 500));
   }
 
