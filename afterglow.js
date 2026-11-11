@@ -1269,7 +1269,7 @@ async function loadElfLoader(url) {
   if (raw === null || !raw.length) return false;
 
   const payload = new Uint8Array(raw.length + 5);
-  payload.set([0xe9, 0xfb, 0xff, 0xff, 0xff], 0);
+  payload.set([0xe9, 0x00, 0x00, 0x00, 0x00], 0);
   payload.set(raw, 5);
 
   say("[elfldr] wrapped " + raw.length + "-byte bootstrap; starting");
