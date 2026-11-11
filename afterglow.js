@@ -1291,8 +1291,6 @@ async function sendNexHENToElfLoader() {
   window.location.assign(payloadURL);
   return true;
 }
-    await new Promise(resolve => setTimeout(resolve, 500));
-  }
 
   say("[elfldr] connection failed on both addresses");
   return false;
