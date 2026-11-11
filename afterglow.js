@@ -1281,36 +1281,50 @@ const NEXHEN_RC6_URL =
   "https://raw.githubusercontent.com/CrispyKilledIt/afterglow/main/nexHEN.-rc6-codxelf.elf";
 
 async function sendNexHENToElfLoader() {
-  /* Harmless readiness probe using an unsupported URI. */
-  const probeURL =
-    "http://127.0.0.1:9021/?uri=probe%3A%2F%2Fnot-a-payload";
+  const urls = [
+    "http://127.0.0.1:9021",
+    "http://192.168.1.102:9021"
+  ];
+
   const payloadURL =
-    "http://127.0.0.1:9021/?uri=" + encodeURIComponent(NEXHEN_RC6_URL);
+    "https://raw.githubusercontent.com/CrispyKilledIt/afterglow/main/nexHEN.-rc6-codxelf.elf";
 
   for (let n = 1; n <= 20; n++) {
-    try {
-      const probe = await fetch(probeURL, { cache: "no-store" });
-      const probeText = await probe.text();
+    for (const base of urls) {
+      try {
+        const probe = await fetch(
+          base + "/?uri=probe%3A%2F%2Fnot-a-payload",
+          { cache: "no-store" }
+        );
 
-      if (probe.ok && probeText.indexOf("Unsupported protocol") !== -1) {
-        say("[elfldr] server ready; sending NexHEN RC6");
-        const response = await fetch(payloadURL, { cache: "no-store" });
-        const result = await response.text();
-        const failed = /Error (reading|spawning)|malformed ELF/i.test(result);
+        const result = await probe.text();
 
-        if (result) say("[elfldr] " + result.trim());
-        else if (response.ok) say("[elfldr] NexHEN RC6 request completed");
-        if (!response.ok) say("[elfldr] HTTP " + response.status);
-        return response.ok && !failed;
+        if (result.indexOf("Unsupported protocol") !== -1) {
+          say("[elfldr] connected through " + base);
+          say("[elfldr] sending NexHEN RC6");
+
+          const response = await fetch(
+            base + "/?uri=" + encodeURIComponent(payloadURL),
+            { cache: "no-store" }
+          );
+
+          const message = await response.text();
+
+          if (message) say("[elfldr] " + message.trim());
+
+          return response.ok &&
+            !/Error (reading|spawning)|malformed ELF/i.test(message);
+        }
+      } catch (e) {
+        say("[elfldr] " + base + ": " +
+          (e && e.message ? e.message : String(e)));
       }
-    } catch (e) {
-      /* The loader thread may still be starting; retry the harmless probe. */
     }
 
-    await new Promise(function (resolve) { setTimeout(resolve, 500); });
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
 
-  say("[elfldr] local server did not answer on 127.0.0.1:9021");
+  say("[elfldr] connection failed on both addresses");
   return false;
 }
 
