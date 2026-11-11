@@ -1292,9 +1292,7 @@ async function sendNexHENToElfLoader() {
   return true;
 }
 
-  say("[elfldr] connection failed on both addresses");
-  return false;
-}
+
 
 /* ------------------------------------------------------- GoldHEN */
 
