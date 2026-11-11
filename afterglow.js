@@ -1262,6 +1262,20 @@ async function loadPayload(url, preloaded) {
   return started;
 }
 
+/* Start the ELF loader bootstrap using an in-memory
+   E9 entry wrapper. The original binary stays unchanged. */
+async function loadElfLoader(url) {
+  const raw = await fetchBytes(url, "elfldr");
+  if (raw === null || !raw.length) return false;
+
+  const payload = new Uint8Array(raw.length + 5);
+  payload.set([0xe9, 0, 0, 0, 0], 0);
+  payload.set(raw, 5);
+
+  say("[elfldr] wrapped " + raw.length + "-byte bootstrap; starting");
+  return loadPayload(url, payload);
+}
+
 /* ------------------------------------------------------- GoldHEN */
 
 /* This image is not a payload in the sense hen.bin is. The first 0x50000
