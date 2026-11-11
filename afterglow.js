@@ -1288,17 +1288,12 @@ const NEXHEN_RC6_URL =
   "https://raw.githubusercontent.com/CrispyKilledIt/afterglow/main/nexHEN.-rc6-codxelf.elf";
 
 
+
 async function sendNexHENToElfLoader() {
   let fd = -1;
 
   try {
-    say("[elfldr] opening TCP connection");
-
-    fd = sc(S.socket, 2, 1, 0).i32;
-    if (fd < 0) {
-      say("[elfldr] socket creation failed: " + fd);
-      return false;
-    }
+    say("[elfldr] waiting for local loader");
 
     const addr = alloc(16);
     addr.u8.set([
@@ -1307,14 +1302,45 @@ async function sendNexHENToElfLoader() {
       0, 0, 0, 0, 0, 0, 0, 0
     ]);
 
-    const connected = sc(S.connect, fd, addr.at, 16).i32;
+    let connected = false;
 
-    if (connected !== 0) {
-      say("[elfldr] TCP connect failed: " + connected);
-      return false;
+    for (let attempt = 1; attempt <= 20; attempt++) {
+      fd = sc(S.socket, 2, 1, 0).i32;
+
+      if (fd < 0) {
+        const err = host().errno();
+        say("[elfldr] socket failed: " + fd + " errno=" + err);
+        return false;
+      }
+
+      const result = sc(S.connect, fd, addr.at, 16).i32;
+
+      if (result === 0) {
+        connected = true;
+        say("[elfldr] connected on attempt " + attempt);
+        break;
+      }
+
+      const err = host().errno();
+      say("[elfldr] connect attempt " + attempt + " failed: errno=" + err);
+
+      sc(S.close, fd);
+      fd = -1;
+
+      if (err !== 61) {
+        say("[elfldr] unexpected connection error; stopping");
+        return false;
+      }
+
+      if (attempt < 20) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
     }
 
-    say("[elfldr] connected to local loader");
+    if (!connected) {
+      say("[elfldr] loader did not accept connection after 20 attempts");
+      return false;
+    }
 
     const url = NEXHEN_RC6_URL + "\n";
     const bytes = new Uint8Array(url.length);
@@ -1337,7 +1363,8 @@ async function sendNexHENToElfLoader() {
       ).i32;
 
       if (count <= 0) {
-        say("[elfldr] TCP write failed: " + count);
+        say("[elfldr] TCP write failed: " + count +
+            " errno=" + host().errno());
         return false;
       }
 
@@ -1357,6 +1384,7 @@ async function sendNexHENToElfLoader() {
     }
   }
 }
+
 
 
 
