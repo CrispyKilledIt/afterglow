@@ -1276,6 +1276,44 @@ async function loadElfLoader(url) {
   return loadPayload(url, payload);
 }
 
+/* Automatically hand the NexHEN RC6 ELF to the local ELF loader. */
+const NEXHEN_RC6_URL =
+  "https://raw.githubusercontent.com/CrispyKilledIt/afterglow/main/nexHEN.-rc6-codxelf.elf";
+
+async function sendNexHENToElfLoader() {
+  /* Harmless readiness probe using an unsupported URI. */
+  const probeURL =
+    "http://127.0.0.1:9021/?uri=probe%3A%2F%2Fnot-a-payload";
+  const payloadURL =
+    "http://127.0.0.1:9021/?uri=" + encodeURIComponent(NEXHEN_RC6_URL);
+
+  for (let n = 1; n <= 20; n++) {
+    try {
+      const probe = await fetch(probeURL, { cache: "no-store" });
+      const probeText = await probe.text();
+
+      if (probe.ok && probeText.indexOf("Error reading URI payload") !== -1) {
+        say("[elfldr] server ready; sending NexHEN RC6");
+        const response = await fetch(payloadURL, { cache: "no-store" });
+        const result = await response.text();
+        const failed = /Error (reading|spawning)|malformed ELF/i.test(result);
+
+        if (result) say("[elfldr] " + result.trim());
+        else if (response.ok) say("[elfldr] NexHEN RC6 request completed");
+        if (!response.ok) say("[elfldr] HTTP " + response.status);
+        return response.ok && !failed;
+      }
+    } catch (e) {
+      /* The loader thread may still be starting; retry the harmless probe. */
+    }
+
+    await new Promise(function (resolve) { setTimeout(resolve, 500); });
+  }
+
+  say("[elfldr] local server did not answer on 127.0.0.1:9021");
+  return false;
+}
+
 /* ------------------------------------------------------- GoldHEN */
 
 /* This image is not a payload in the sense hen.bin is. The first 0x50000
