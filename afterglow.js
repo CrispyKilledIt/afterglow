@@ -38,7 +38,7 @@ import { int64 } from "./int64.js";
 
 
 const S = {
-  open: 5, close: 6, write: 4, ioctl: 54,
+  open: 5, close: 6, read: 3, write: 4, ioctl: 54,
   mprotect: 74, socket: 97, connect: 98,
   setsockopt: 105, getuid: 24,
   kqueue: 362, kevent: 363, mmap: 477,
@@ -1289,6 +1289,7 @@ const NEXHEN_RC6_URL =
 
 
 
+
 async function sendNexHENToElfLoader() {
   let fd = -1;
 
@@ -1308,8 +1309,8 @@ async function sendNexHENToElfLoader() {
       fd = sc(S.socket, 2, 1, 0).i32;
 
       if (fd < 0) {
-        const err = host().errno();
-        say("[elfldr] socket failed: " + fd + " errno=" + err);
+        say("[elfldr] socket failed: " + fd +
+            " errno=" + host().errno());
         return false;
       }
 
@@ -1322,13 +1323,14 @@ async function sendNexHENToElfLoader() {
       }
 
       const err = host().errno();
-      say("[elfldr] connect attempt " + attempt + " failed: errno=" + err);
+      say("[elfldr] connect attempt " + attempt +
+          " failed: errno=" + err);
 
       sc(S.close, fd);
       fd = -1;
 
       if (err !== 61) {
-        say("[elfldr] unexpected connection error; stopping");
+        say("[elfldr] unexpected connection error");
         return false;
       }
 
@@ -1338,7 +1340,22 @@ async function sendNexHENToElfLoader() {
     }
 
     if (!connected) {
-      say("[elfldr] loader did not accept connection after 20 attempts");
+      say("[elfldr] loader did not accept connection");
+      return false;
+    }
+
+    // Set a 30-second receive timeout.
+    const timeout = alloc(16);
+    timeout.dv.setBigInt64(0, 30n, true);
+    timeout.dv.setBigInt64(8, 0n, true);
+
+    const timeoutResult = sc(
+      S.setsockopt, fd, 0xffff, 0x1006, timeout.at, 16
+    ).i32;
+
+    if (timeoutResult !== 0) {
+      say("[elfldr] receive timeout setup failed: errno=" +
+          host().errno());
       return false;
     }
 
@@ -1371,8 +1388,53 @@ async function sendNexHENToElfLoader() {
       sent += count;
     }
 
-    say("[elfldr] NexHEN URL sent successfully");
-    return true;
+    say("[elfldr] URL sent; waiting for loader response");
+
+    const reply = alloc(256);
+    let received = 0;
+    let closed = false;
+
+    while (received < 256) {
+      const count = sc(
+        S.read,
+        fd,
+        plus(reply.at, received),
+        256 - received
+      ).i32;
+
+      if (count === 0) {
+        closed = true;
+        break;
+      }
+
+      if (count < 0) {
+        say("[elfldr] response read failed: errno=" +
+            host().errno());
+        return false;
+      }
+
+      received += count;
+    }
+
+    let message = "";
+
+    for (let i = 0; i < received; i++) {
+      const ch = reply.u8[i];
+      if (ch !== 0) message += String.fromCharCode(ch);
+    }
+
+    if (message.length > 0) {
+      say("[elfldr] loader response: " + message);
+      return false;
+    }
+
+    if (closed) {
+      say("[elfldr] loader closed connection without an error");
+      return true;
+    }
+
+    say("[elfldr] response exceeded buffer");
+    return false;
 
   } catch (e) {
     say("[elfldr] sender error: " + String(e));
