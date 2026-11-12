@@ -1,0 +1,56 @@
+name: Refresh PS4 browser cache manifest
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "index.html"
+      - "jb.html"
+      - "style.css"
+      - "launch.js"
+      - "meme.png"
+      - "jb.js"
+      - "core.js"
+      - "mem.js"
+      - "int64.js"
+      - "ps4_offsets.js"
+      - "afterglow.js"
+      - "patchset-*.bin"
+      - "hen.bin"
+      - "goldhen.bin"
+      - "elfldr.bin"
+      - "make-manifest.sh"
+      - ".github/workflows/refresh-cache-manifest.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-cache-manifest-main
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Rebuild manifest from current published files
+        run: |
+          chmod +x ./make-manifest.sh
+          ./make-manifest.sh
+      - name: Commit manifest when changed
+        run: |
+          if git diff --quiet -- cache.appcache; then
+            echo "Manifest already matches the current files."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add cache.appcache
+          git commit -m "Refresh PS4 browser cache manifest"
+          git push origin HEAD:main
