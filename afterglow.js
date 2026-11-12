@@ -2441,10 +2441,11 @@ if (mode === "elfldr_test") {
   const loaderStarted = await loadElfLoader("elfldr.bin");
 
   if (mode === "elfldr_test") {
-  const loaderStarted = await loadElfLoader("elfldr.bin");
+    const loaderStarted = await loadElfLoader("elfldr.bin");
   iface.payload = loaderStarted && await sendNexHENToElfLoader();
 } else if (want !== "") {
-} else if (want !== "") {
+  iface.payload = (mode === "goldhen")
+    ? await loadEnabler(want || "goldhen.bin", k, kbase, hostFree)
     : await loadPayload(want || "hen.bin");
 }
   say("done -- jailbroken, rwx open, syscall 11 is a kexec gate"
