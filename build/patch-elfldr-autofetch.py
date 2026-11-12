@@ -317,8 +317,7 @@ replacements = [
     notify("Afterglow: NexHEN spawn failed loading ELF segments or setting registers");
     kill(pid, SIGKILL);
     return -1;
-  }""")
-
+  }"""),
 ("""  if(mdbg_copyin(pid, &orginstr, brkpoint, sizeof(orginstr))) {
     LOG_PERROR("mdbg_copyin");
     pt_detach(pid, SIGKILL);""", """  if(mdbg_copyin(pid, &orginstr, brkpoint, sizeof(orginstr))) {
