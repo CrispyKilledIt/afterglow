@@ -299,136 +299,6 @@ if 'Afterglow: second-stage ELF read failed' not in srv:
 
 srv_path.write_text(srv)
 
-# Instrument the nested ELF stream reader so the PS4 reports the exact
-# recv stage and byte count instead of a generic elfldr_read failure.
-elf_path = Path("elfldr.c")
-elf = elf_path.read_text()
-start = elf.find("int\nelfldr_read(int fd, uint8_t **elf, size_t *elf_size) {")
-if start < 0:
-    raise SystemExit("elfldr_read function start not found")
-end = elf.find("\n}\n", start)
-if end < 0:
-    raise SystemExit("elfldr_read function end not found")
-end += 3
-new_reader = r"""
-int
-elfldr_read(int fd, uint8_t **elf, size_t *elf_size) {
-  Elf64_Shdr *shdr;
-  Elf64_Ehdr ehdr;
-  uint8_t *buf;
-  uint8_t *bak;
-  size_t size;
-  off_t shend;
-  size_t rem;
-  ssize_t got;
-
-  got = recv(fd, &ehdr, sizeof(ehdr), MSG_WAITALL);
-  if(got != sizeof(ehdr)) {
-    LOG_PRINTF("elfldr_read: ELF header recv got %zd of %zu bytes (errno %d)\n",
-               got, sizeof(ehdr), errno);
-    notify("Afterglow: ELF header incomplete (%zd/%zu)", got, sizeof(ehdr));
-    return -1;
-  }
-
-  LOG_PRINTF("elfldr_read: header ok, class %u, machine %u, shoff %llu, shnum %u, shentsize %u\n",
-             ehdr.e_ident[EI_CLASS], ehdr.e_machine,
-             (unsigned long long)ehdr.e_shoff, ehdr.e_shnum, ehdr.e_shentsize);
-
-  if(ehdr.e_ident[0] != 0x7f || ehdr.e_ident[1] != 'E'
-     || ehdr.e_ident[2] != 'L' || ehdr.e_ident[3] != 'F') {
-    errno = ENOEXEC;
-    notify("Afterglow: second-stage stream is not ELF");
-    return -1;
-  }
-
-  if(ehdr.e_ident[EI_CLASS] != ELFCLASS64
-     || ehdr.e_shentsize != sizeof(Elf64_Shdr)
-     || ehdr.e_shnum == 0
-     || ehdr.e_shoff > SIZE_MAX
-     || ehdr.e_shnum > (SIZE_MAX - (size_t)ehdr.e_shoff) / sizeof(Elf64_Shdr)) {
-    errno = ENOEXEC;
-    LOG_PUTS("elfldr_read: unsupported or malformed ELF section table");
-    notify("Afterglow: malformed second-stage ELF header");
-    return -1;
-  }
-
-  size = (size_t)ehdr.e_shoff + (size_t)ehdr.e_shnum * sizeof(Elf64_Shdr);
-  if(size < sizeof(ehdr)) {
-    errno = ENOEXEC;
-    notify("Afterglow: invalid second-stage ELF size");
-    return -1;
-  }
-
-  if(!(buf = malloc(size))) {
-    LOG_PERROR("elfldr_read malloc");
-    notify("Afterglow: cannot allocate second-stage ELF header");
-    return -1;
-  }
-
-  memcpy(buf, &ehdr, sizeof(ehdr));
-  rem = size - sizeof(ehdr);
-  got = recv(fd, buf + sizeof(ehdr), rem, MSG_WAITALL);
-  if(got != (ssize_t)rem) {
-    LOG_PRINTF("elfldr_read: section table recv got %zd of %zu bytes (errno %d)\n",
-               got, rem, errno);
-    notify("Afterglow: ELF section table incomplete (%zd/%zu)", got, rem);
-    free(buf);
-    return -1;
-  }
-
-  shend = (off_t)size;
-  shdr = (Elf64_Shdr *)(buf + ehdr.e_shoff);
-  for(int i = 0; i < ehdr.e_shnum; i++) {
-    if(shdr[i].sh_type == SHT_NOBITS) {
-      continue;
-    }
-    if(shdr[i].sh_offset > SIZE_MAX
-       || shdr[i].sh_size > SIZE_MAX - (size_t)shdr[i].sh_offset) {
-      errno = ENOEXEC;
-      free(buf);
-      notify("Afterglow: invalid ELF section bounds");
-      return -1;
-    }
-    size_t section_end = (size_t)shdr[i].sh_offset + (size_t)shdr[i].sh_size;
-    if(section_end > (size_t)shend) {
-      shend = section_end;
-    }
-  }
-
-  if((size_t)shend <= size) {
-    *elf = buf;
-    *elf_size = size;
-    return 0;
-  }
-
-  bak = buf;
-  if(!(buf = realloc(buf, (size_t)shend))) {
-    free(bak);
-    LOG_PERROR("elfldr_read realloc");
-    notify("Afterglow: cannot allocate full second-stage ELF");
-    return -1;
-  }
-
-  rem = (size_t)shend - size;
-  got = recv(fd, buf + size, rem, MSG_WAITALL);
-  if(got != (ssize_t)rem) {
-    LOG_PRINTF("elfldr_read: ELF sections recv got %zd of %zu bytes (errno %d)\n",
-               got, rem, errno);
-    notify("Afterglow: ELF sections incomplete (%zd/%zu)", got, rem);
-    free(buf);
-    return -1;
-  }
-
-  *elf = buf;
-  *elf_size = (size_t)shend;
-  LOG_PRINTF("elfldr_read: received complete ELF (%zu bytes)\n", *elf_size);
-  notify("Afterglow: second-stage ELF read complete");
-  return 0;
-}
-"""
-elf = elf[:start] + new_reader + elf[end:]
-elf_path.write_text(elf)
-
 # Instrument fatal stages in elfldr_spawn so the PS4 identifies the exact failure.
 elf_path = Path("elfldr.c")
 elf = elf_path.read_text()
@@ -607,6 +477,136 @@ for old, new in replacements:
 # mmap owns both the thread stack and ELF mirror; release each with munmap.
 elf = elf.replace("free(stack);", "munmap(stack, MB(2));")
 elf = elf.replace("free(ctx.base_mirror);", "munmap(ctx.base_mirror, ctx.base_size);")
+elf_path.write_text(elf)
+
+# Instrument the nested ELF stream reader so the PS4 reports the exact
+# recv stage and byte count instead of a generic elfldr_read failure.
+elf_path = Path("elfldr.c")
+elf = elf_path.read_text()
+start = elf.find("int\nelfldr_read(int fd, uint8_t **elf, size_t *elf_size) {")
+if start < 0:
+    raise SystemExit("elfldr_read function start not found")
+end = elf.find("\n}\n", start)
+if end < 0:
+    raise SystemExit("elfldr_read function end not found")
+end += 3
+new_reader = r"""
+int
+elfldr_read(int fd, uint8_t **elf, size_t *elf_size) {
+  Elf64_Shdr *shdr;
+  Elf64_Ehdr ehdr;
+  uint8_t *buf;
+  uint8_t *bak;
+  size_t size;
+  off_t shend;
+  size_t rem;
+  ssize_t got;
+
+  got = recv(fd, &ehdr, sizeof(ehdr), MSG_WAITALL);
+  if(got != sizeof(ehdr)) {
+    LOG_PRINTF("elfldr_read: ELF header recv got %zd of %zu bytes (errno %d)\n",
+               got, sizeof(ehdr), errno);
+    notify("Afterglow: ELF header incomplete (%zd/%zu)", got, sizeof(ehdr));
+    return -1;
+  }
+
+  LOG_PRINTF("elfldr_read: header ok, class %u, machine %u, shoff %llu, shnum %u, shentsize %u\n",
+             ehdr.e_ident[EI_CLASS], ehdr.e_machine,
+             (unsigned long long)ehdr.e_shoff, ehdr.e_shnum, ehdr.e_shentsize);
+
+  if(ehdr.e_ident[0] != 0x7f || ehdr.e_ident[1] != 'E'
+     || ehdr.e_ident[2] != 'L' || ehdr.e_ident[3] != 'F') {
+    errno = ENOEXEC;
+    notify("Afterglow: second-stage stream is not ELF");
+    return -1;
+  }
+
+  if(ehdr.e_ident[EI_CLASS] != ELFCLASS64
+     || ehdr.e_shentsize != sizeof(Elf64_Shdr)
+     || ehdr.e_shnum == 0
+     || ehdr.e_shoff > SIZE_MAX
+     || ehdr.e_shnum > (SIZE_MAX - (size_t)ehdr.e_shoff) / sizeof(Elf64_Shdr)) {
+    errno = ENOEXEC;
+    LOG_PUTS("elfldr_read: unsupported or malformed ELF section table");
+    notify("Afterglow: malformed second-stage ELF header");
+    return -1;
+  }
+
+  size = (size_t)ehdr.e_shoff + (size_t)ehdr.e_shnum * sizeof(Elf64_Shdr);
+  if(size < sizeof(ehdr)) {
+    errno = ENOEXEC;
+    notify("Afterglow: invalid second-stage ELF size");
+    return -1;
+  }
+
+  if(!(buf = malloc(size))) {
+    LOG_PERROR("elfldr_read malloc");
+    notify("Afterglow: cannot allocate second-stage ELF header");
+    return -1;
+  }
+
+  memcpy(buf, &ehdr, sizeof(ehdr));
+  rem = size - sizeof(ehdr);
+  got = recv(fd, buf + sizeof(ehdr), rem, MSG_WAITALL);
+  if(got != (ssize_t)rem) {
+    LOG_PRINTF("elfldr_read: section table recv got %zd of %zu bytes (errno %d)\n",
+               got, rem, errno);
+    notify("Afterglow: ELF section table incomplete (%zd/%zu)", got, rem);
+    free(buf);
+    return -1;
+  }
+
+  shend = (off_t)size;
+  shdr = (Elf64_Shdr *)(buf + ehdr.e_shoff);
+  for(int i = 0; i < ehdr.e_shnum; i++) {
+    if(shdr[i].sh_type == SHT_NOBITS) {
+      continue;
+    }
+    if(shdr[i].sh_offset > SIZE_MAX
+       || shdr[i].sh_size > SIZE_MAX - (size_t)shdr[i].sh_offset) {
+      errno = ENOEXEC;
+      free(buf);
+      notify("Afterglow: invalid ELF section bounds");
+      return -1;
+    }
+    size_t section_end = (size_t)shdr[i].sh_offset + (size_t)shdr[i].sh_size;
+    if(section_end > (size_t)shend) {
+      shend = section_end;
+    }
+  }
+
+  if((size_t)shend <= size) {
+    *elf = buf;
+    *elf_size = size;
+    return 0;
+  }
+
+  bak = buf;
+  if(!(buf = realloc(buf, (size_t)shend))) {
+    free(bak);
+    LOG_PERROR("elfldr_read realloc");
+    notify("Afterglow: cannot allocate full second-stage ELF");
+    return -1;
+  }
+
+  rem = (size_t)shend - size;
+  got = recv(fd, buf + size, rem, MSG_WAITALL);
+  if(got != (ssize_t)rem) {
+    LOG_PRINTF("elfldr_read: ELF sections recv got %zd of %zu bytes (errno %d)\n",
+               got, rem, errno);
+    notify("Afterglow: ELF sections incomplete (%zd/%zu)", got, rem);
+    free(buf);
+    return -1;
+  }
+
+  *elf = buf;
+  *elf_size = (size_t)shend;
+  LOG_PRINTF("elfldr_read: received complete ELF (%zu bytes)\n", *elf_size);
+  notify("Afterglow: second-stage ELF read complete");
+  return 0;
+}
+"""
+elf = elf[:start] + new_reader + elf[end:]
 elf_path.write_text(elf)
 
 print("Patched bootstrap handshake, HTTP body reads, and payload launch reporting")
