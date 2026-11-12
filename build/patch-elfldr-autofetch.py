@@ -77,4 +77,102 @@ if "send_nexhen_uri();" not in s:
         raise SystemExit("elfldr_spawn anchor missing")
     s = s.replace(needle2, replace2, 1)
 p.write_text(s)
+
+# The upstream HTTP reader requested the entire content length only once and
+# used a precedence-broken comparison that never detected short reads.
+# Read until the advertised length is complete, failing closed on EOF/errors.
+uri_path = Path("uri.c")
+u = uri_path.read_text()
+old = """  if(!len || status != 200) {
+    // TODO: support resources without a content length
+    return status;
+  }
+
+  if(!(*data = malloc(*len))) {
+    return -1;
+  }
+
+  if((n = sceHttp2ReadData(ctx->reqId, *data, *len) < 0)) {
+    return n;
+  }
+"""
+new = """  if(!len || !*len || status != 200) {
+    // TODO: support resources without a content length
+    return status;
+  }
+
+  if(!(*data = malloc(*len))) {
+    return -1;
+  }
+
+  size_t off = 0;
+  while(off < *len) {
+    n = sceHttp2ReadData(ctx->reqId, *data + off, *len - off);
+    if(n <= 0) {
+      free(*data);
+      *data = 0;
+      return -1;
+    }
+    off += (size_t)n;
+  }
+"""
+if new not in u:
+    if old not in u:
+        raise SystemExit("uri.c HTTP read anchor missing; refusing partial patch")
+    u = u.replace(old, new, 1)
+    uri_path.write_text(u)
+    print("Patched uri.c: read full HTTP response body")
+
+# Add server-side evidence for URL fetch and ELF launch to the PS4 kernel log.
+srv_path = Path("socksrv.c")
+srv = srv_path.read_text()
+old2 = """  if(buf) {
+    if(!(filename = uri_get_filename(uri))) {
+      filename = strdup("payload.elf");
+    }
+    if(!(args = uri_get_param(uri, "args"))) {
+      args = strdup("");
+    }
+    if(payload_spawn(filename, args, fd, buf, len) < 0) {
+      write(fd, "[elfldr.elf] Error spawning payload\\n\\r\\0", 38);
+    }
+    free(filename);
+    free(args);
+    free(buf);
+  }
+"""
+new2 = """  if(buf) {
+    LOG_PRINTF("Fetched payload: %zu bytes\\n", len);
+    if(magic == PAYLOAD_MAGIC_ELF && elfldr_sanity_check(buf, len)) {
+      LOG_PUTS("ELF sanity check failed");
+      write(fd, "[elfldr.elf] Invalid ELF payload\\n\\r\\0", 37);
+      free(buf);
+      return;
+    }
+    if(!(filename = uri_get_filename(uri))) {
+      filename = strdup("payload.elf");
+    }
+    if(!(args = uri_get_param(uri, "args"))) {
+      args = strdup("");
+    }
+    pid_t payload_pid = payload_spawn(filename, args, fd, buf, len);
+    if(payload_pid < 0) {
+      LOG_PUTS("Error spawning payload");
+      write(fd, "[elfldr.elf] Error spawning payload\\n\\r\\0", 38);
+    } else {
+      LOG_PRINTF("Payload spawned with pid %d\\n", payload_pid);
+    }
+    free(filename);
+    free(args);
+    free(buf);
+  }
+"""
+if new2 not in srv:
+    if old2 not in srv:
+        raise SystemExit("socksrv.c payload anchor missing; refusing partial patch")
+    srv = srv.replace(old2, new2, 1)
+    srv_path.write_text(srv)
+    print("Patched socksrv.c: log fetch size, validate ELF, log spawn result")
+
+
 print("Patched bootstrap-elf.c")
