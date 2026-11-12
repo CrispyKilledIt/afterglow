@@ -233,7 +233,7 @@ new_tail = """  if(buf) {
       LOG_PUTS("Error spawning payload");
       notify("Afterglow: NexHEN ELF launch failed");
       write(fd, "[elfldr.elf] Error spawning payload\\n\\r\\0", 38);
-    } else {
+    } else if(uri_payload) {
       LOG_PRINTF("Payload exec handed off with pid %d\\n", payload_pid);
       sleep(2);
       errno = 0;
@@ -256,6 +256,8 @@ new_tail = """  if(buf) {
         notify("Afterglow: NexHEN exited early (errno %d)", probe_errno);
       }
       write(fd, status, status_len);
+    } else {
+      LOG_PRINTF("ELF payload spawned with pid %d\\n", payload_pid);
     }
     free(filename);
     free(args);
