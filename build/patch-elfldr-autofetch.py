@@ -255,6 +255,8 @@ elf_path = Path("elfldr.c")
 elf = elf_path.read_text()
 if '#include "notify.h"' not in elf:
     elf = elf.replace('#include "log.h"\n', '#include "log.h"\n#include "notify.h"\n', 1)
+if "#include <errno.h>" not in elf:
+    elf = elf.replace("#include <elf.h>\n", "#include <elf.h>\n#include <errno.h>\n", 1)
 replacements = [
 ("""  if((kq = kqueue()) < 0) {
     LOG_PERROR("kqueue");
@@ -335,9 +337,19 @@ replacements = [
 ("""  if(!(ctx.base_mirror = malloc(ctx.base_size))) {
     LOG_PERROR("malloc");
     return 0;
-  }""", """  if(!(ctx.base_mirror = malloc(ctx.base_size))) {
-    LOG_PERROR("malloc");
-    notify("Afterglow: NexHEN ELF load failed allocating mirror");
+  }""", """  if(!ctx.base_size) {
+    LOG_PUTS("ELF mirror size is zero");
+    notify("Afterglow: NexHEN ELF mirror size is zero");
+    return 0;
+  }
+
+  ctx.base_mirror = mmap(0, ctx.base_size, PROT_READ | PROT_WRITE,
+                         MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if(ctx.base_mirror == MAP_FAILED) {
+    int mirror_errno = errno;
+    LOG_PERROR("mmap ELF mirror");
+    notify("Afterglow: ELF mirror mmap failed (%zu bytes, errno %d)",
+           ctx.base_size, mirror_errno);
     return 0;
   }"""),
 ("""     == -1) {
@@ -413,9 +425,9 @@ replacements = [
 for old, new in replacements:
     if new not in elf and old in elf:
         elf = elf.replace(old, new, 1)
-# mmap owns the thread-stack allocation; release it with munmap on every
-# failure path and after the child has attached.
+# mmap owns both the thread stack and ELF mirror; release each with munmap.
 elf = elf.replace("free(stack);", "munmap(stack, MB(2));")
+elf = elf.replace("free(ctx.base_mirror);", "munmap(ctx.base_mirror, ctx.base_size);")
 elf_path.write_text(elf)
 
 print("Patched bootstrap handshake, HTTP body reads, and payload launch reporting")
