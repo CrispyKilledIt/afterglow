@@ -1,0 +1,309 @@
+<!doctype html>
+<html class="landing" lang="en" manifest="cache.appcache">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ORBIS OS // 14.00 AFTERGLOW LAYER</title>
+    <style>
+        :root {
+            --bg-color: #05050a;
+            --panel-bg: rgba(12, 12, 24, 0.85);
+            --neon-blue: #00f0ff;
+            --neon-pink: #ff007f;
+            --text-color: #d8d8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 240, 255, 0.12) 0px, transparent 40%),
+                radial-gradient(at 100% 100%, rgba(255, 0, 127, 0.12) 0px, transparent 40%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: linear-gradient(90deg, #0e0e1a, #07070f);
+            padding: 15px 30px;
+            border-bottom: 2px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title-container h1 {
+            font-size: 22px;
+            letter-spacing: 3px;
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        .title-container p {
+            font-size: 11px;
+            color: var(--neon-pink);
+            letter-spacing: 2px;
+            margin-top: 3px;
+            font-weight: bold;
+        }
+
+        #status-display {
+            background: #000;
+            border: 1px solid var(--neon-pink);
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            color: #fff;
+            text-shadow: 0 0 5px var(--neon-pink);
+            min-width: 280px;
+            text-align: center;
+            box-shadow: inset 0 0 10px rgba(255, 0, 127, 0.15);
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            height: calc(100vh - 75px);
+        }
+
+        .menu-grid {
+            flex: 3;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .category-panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .category-panel h2 {
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            color: #fff;
+            border-left: 3px solid var(--neon-blue);
+            padding-left: 8px;
+            align-self: flex-start;
+        }
+
+        .cyber-logo-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            flex: 1;
+        }
+
+        .cyber-logo-container img {
+            max-height: 140px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.2));
+            animation: pulseGlow 4s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { filter: drop-shadow(0 0 5px rgba(0, 240, 255, 0.2)); opacity: 0.95; }
+            50% { filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.5)); opacity: 1; }
+        }
+
+        .pick {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .opt {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            padding: 11px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            transition: all 0.2s ease;
+        }
+
+        .opt:hover {
+            background: rgba(0, 240, 255, 0.05);
+            border-color: var(--neon-blue);
+        }
+
+        .opt input[type="radio"], .opt input[type="checkbox"] {
+            accent-color: var(--neon-blue);
+            width: 15px;
+            height: 15px;
+        }
+
+        .opt-auto {
+            border-color: rgba(255, 0, 127, 0.2);
+        }
+        .opt-auto:hover {
+            background: rgba(255, 0, 127, 0.05);
+            border-color: var(--neon-pink);
+        }
+        .opt-auto input {
+            accent-color: var(--neon-pink);
+        }
+
+        .btn {
+            background: rgba(255, 0, 127, 0.1);
+            border: 1px solid var(--neon-pink);
+            color: #fff;
+            padding: 14px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.2);
+            transition: all 0.25s ease;
+            margin-top: 5px;
+        }
+
+        .btn:hover {
+            background: rgba(255, 0, 127, 0.25);
+            box-shadow: 0 0 15px var(--neon-pink);
+            transform: translateY(-1px);
+        }
+
+        .sidebar {
+            flex: 1.1;
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar h2 {
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            color: #fff;
+            border-left: 3px solid var(--neon-pink);
+            padding-left: 8px;
+        }
+
+        .output-container {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 4px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #8a8aab;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .count {
+            line-height: 1.6;
+            word-break: break-all;
+        }
+        
+        #count { color: var(--neon-blue); text-shadow: 0 0 5px rgba(0, 240, 255, 0.3); }
+        #cache { color: #00ff66; }
+        .byline { position: absolute; bottom: 15px; right: 35px; font-size: 11px; color: rgba(255,255,255,0.2); letter-spacing: 1px; }
+    </style>
+  </head>
+  <body>
+
+    <header>
+        <div class="title-container">
+            <h1>AFTERGLOW SYSTEM HUB</h1>
+            <p>FIRMWARE 12.00 &ndash; 14.00 STAGING ACTIVE</p>
+        </div>
+        <div id="status-display">SYSTEM ENGINE: IDLE</div>
+    </header>
+
+    <main>
+        <div class="menu-grid">
+            <div class="category-panel">
+                <h2>PAYLOAD CONFIGURATION</h2>
+                
+                <div class="cyber-logo-container">
+                    <img src="logo.png" alt="System Emblem"/>
+                </div>
+
+                <form class="pick" id="pick">
+                    <label class="opt">
+                        <input type="radio" name="payload" value="hen" />
+                        <span>PS4-HEN (standard)</span>
+                    </label>
+                    <label class="opt">
+                        <input type="radio" name="payload" value="goldhen" />
+                        <span>GoldHEN Layer</span>
+                    </label>
+                  <label class="opt">
+    <input type="radio" name="payload" value="elfldr_test" checked />
+    <span>NexHEN RC6 (native ELF loader)</span>
+</label>
+                    <label class="opt opt-auto">
+                        <input type="checkbox" id="auto" />
+                        <span>Auto-Inject Selected Payload</span>
+                    </label>
+                    <button type="submit" class="btn" id="go">EXECUTE PAYLOAD</button>
+                </form>
+            </div>
+
+            <div class="category-panel">
+                <h2>RUNTIME DIAGNOSTICS</h2>
+                <div class="output-container" style="width: 100%;">
+                    <div class="count" id="cache">CACHE STATUS: STANDBY</div>
+                    <div class="count" id="count">TIMER: READY (15s WINDOW)</div>
+                    <div class="count">TARGET: ORBIS KERNEL 12.00-14.00</div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="sidebar">
+            <h2>SYSTEM LOG</h2>
+            <div class="output-container" id="log">
+                <div>[BOOT] Afterglow WebKit Layer Initialized...</div>
+                <div>[READY] NexHEN RC6 selected. Press EXECUTE PAYLOAD to start manually.</div>
+            </div>
+        </aside>
+    </main>
+
+    <div class="byline">AFTERGLOW // NEXHEN EDITION</div>
+
+    <script src="launch.js"></script>
+  </body>
+</html>
