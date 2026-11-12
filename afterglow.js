@@ -1275,15 +1275,14 @@ async function loadPayload(url, preloaded) {
 /* Start the ELF loader bootstrap using an in-memory
    E9 entry wrapper. The original binary stays unchanged. */
 async function loadElfLoader(url) {
-  /* AppCache and the PS4 HTTP cache have both served an older elfldr.bin
-     even after a manifest deployment. Give every published binary an
-     immutable URL and refuse to run anything except the expected build. */
-  const expectedBytes = 268095;
+  /* Match the exact size of the committed 14.00 ELF-loader bootstrap.
+     A mismatch is a real truncation/version error, not a cache guess. */
+  const expectedBytes = 263700;
   const publishedUrl = url + "?build=595bd54babaec40c40b8ae7911a60fe7";
   const raw = await fetchBytes(publishedUrl, "elfldr", "no-store");
   if (raw === null || !raw.length) return false;
   if (raw.length !== expectedBytes) {
-    say("[elfldr] stale or incomplete bootstrap: got " + raw.length
+    say("[elfldr] unexpected bootstrap size: got " + raw.length
         + " bytes; expected " + expectedBytes + " -- refusing to start");
     return false;
   }
