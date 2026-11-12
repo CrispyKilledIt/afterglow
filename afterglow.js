@@ -2439,7 +2439,13 @@ const mode = (ctx.params && ctx.params.get("mode")) || "";
 
 if (mode === "elfldr_test") {
   const loaderStarted = await loadElfLoader("elfldr.bin");
-  iface.payload = loaderStarted && await sendNexHENToElfLoader();
+  if (loaderStarted) {
+    say("[elfldr] waiting 3 seconds for HTTP listener");
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    iface.payload = await sendNexHENToElfLoader();
+  } else {
+    iface.payload = false;
+  }
 } else if (want !== "") {
   iface.payload = (mode === "goldhen")
     ? await loadEnabler(want || "goldhen.bin", k, kbase, hostFree)
