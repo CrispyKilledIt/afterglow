@@ -10,7 +10,7 @@ var TARGET = {
 };
 
 var AUTOSTART_SECONDS = 5;
-var STORE_KEY = "afterglow.choice.v2";
+var STORE_KEY = "afterglow.choice.v3";
 
 var form = document.getElementById("pick");
 var autoBox = document.getElementById("auto");
@@ -122,7 +122,7 @@ function restore() {
 
 function picked() {
   var radio = form.querySelector('input[name="payload"]:checked');
-  return radio ? radio.value : "hen";
+  return radio ? radio.value : "elfldr_test";
 }
 
 function go() {

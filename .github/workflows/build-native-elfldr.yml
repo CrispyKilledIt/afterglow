@@ -1,0 +1,73 @@
+name: Build native ELF loader handoff
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "build/patch-elfldr-autofetch.py"
+      - ".github/workflows/build-native-elfldr.yml"
+      - "index.html"
+      - "launch.js"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Afterglow
+        uses: actions/checkout@v4
+      - name: Checkout upstream ELF loader
+        uses: actions/checkout@v4
+        with:
+          repository: ps4-payload-dev/elfldr
+          path: elfldr-src
+      - name: Checkout PS4 Payload SDK
+        uses: actions/checkout@v4
+        with:
+          repository: ps4-payload-dev/sdk
+          path: sdk
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-18 lld-18 xxd
+      - name: Build PS4 Payload SDK
+        working-directory: sdk
+        run: |
+          make DESTDIR="$RUNNER_TEMP/ps4-payload-sdk" clean install
+          echo "PS4_PAYLOAD_SDK=$RUNNER_TEMP/ps4-payload-sdk" >> "$GITHUB_ENV"
+      - name: Patch native bootstrap
+        run: |
+          python3 ../build/patch-elfldr-autofetch.py
+        working-directory: elfldr-src
+        env:
+          PYTHONPATH: ../build
+      - name: Build ELF loader
+        working-directory: elfldr-src
+        run: make clean all
+      - name: Verify outputs
+        working-directory: elfldr-src
+        run: |
+          test -s elfldr.bin
+          test -s elfldr.elf
+          file elfldr.bin elfldr.elf
+      - name: Commit tested loader binaries to this branch
+        run: |
+          install -m 0644 elfldr-src/elfldr.bin ./elfldr.bin
+          install -m 0644 elfldr-src/elfldr.elf ./elfldr.elf
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          ./make-manifest.sh
+          git add elfldr.bin elfldr.elf cache.appcache
+          git diff --cached --quiet || git commit -m "Build native NexHEN TCP handoff loader"
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push
+      - name: Upload testable payloads
+        uses: actions/upload-artifact@v4
+        with:
+          name: afterglow-native-elfldr-autofetch
+          path: |
+            elfldr-src/elfldr.bin
+            elfldr-src/elfldr.elf
+          if-no-files-found: error
