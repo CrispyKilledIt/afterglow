@@ -1283,72 +1283,8 @@ async function loadElfLoader(url) {
   return loadPayload(url, payload);
 }
 
-/* Automatically hand the NexHEN RC6 ELF to the local ELF loader. */
-const NEXHEN_RC6_URL =
-  "https://raw.githubusercontent.com/CrispyKilledIt/afterglow/main/nexHEN.-rc6-codxelf.elf";
-
-
-
-
-async function sendNexHENToElfLoader() {
-  try {
-    say("[elfldr] downloading NexHEN ELF");
-
-    const response = await fetch(NEXHEN_RC6_URL);
-    if (!response.ok) {
-      say("[elfldr] download failed: HTTP " + response.status);
-      return false;
-    }
-
-    const bytes = await response.arrayBuffer();
-    if (!bytes || bytes.byteLength === 0) {
-      say("[elfldr] downloaded file is empty");
-      return false;
-    }
-
-    say("[elfldr] sending " + bytes.byteLength + " bytes using HTTP POST");
-
-    return await new Promise(resolve => {
-      const xhr = new XMLHttpRequest();
-
-      xhr.open(
-        "POST",
-        "http://127.0.0.1:9021/nexHEN.-rc6-codxelf.elf?pipe=0",
-        true
-      );
-
-      xhr.setRequestHeader("Content-Type", "text/plain");
-      xhr.timeout = 30000;
-
-      xhr.onload = function () {
-        say("[elfldr] HTTP status: " + xhr.status);
-        say("[elfldr] loader response: " + xhr.responseText);
-        resolve(xhr.status === 200 || xhr.status === 202);
-      };
-
-      xhr.onerror = function () {
-        say("[elfldr] HTTP upload failed");
-        resolve(false);
-      };
-
-      xhr.ontimeout = function () {
-        say("[elfldr] HTTP upload timed out");
-        resolve(false);
-      };
-
-      xhr.send(bytes);
-    });
-
-  } catch (e) {
-    say("[elfldr] error: " + (e && e.message ? e.message : e));
-    return false;
-  }
-}
-
-
-
-
-
+/* The native bootstrap now hands NexHEN's HTTPS URI to elfldr over TCP.
+ * Browser JavaScript deliberately does not try HTTP against elfldr's raw socket. */
 /* ------------------------------------------------------- GoldHEN */
 
 /* This image is not a payload in the sense hen.bin is. The first 0x50000
@@ -2439,12 +2375,11 @@ const mode = (ctx.params && ctx.params.get("mode")) || "";
 
 if (mode === "elfldr_test") {
   const loaderStarted = await loadElfLoader("elfldr.bin");
+  iface.payload = loaderStarted;
   if (loaderStarted) {
-    say("[elfldr] waiting 3 seconds for HTTP listener");
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    iface.payload = await sendNexHENToElfLoader();
+    say("[elfldr] native bootstrap started; it will fetch and launch NexHEN");
   } else {
-    iface.payload = false;
+    say("[elfldr] native bootstrap failed to start");
   }
 } else if (want !== "") {
   iface.payload = (mode === "goldhen")

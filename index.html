@@ -264,19 +264,19 @@
 
                 <form class="pick" id="pick">
                     <label class="opt">
-                        <input type="radio" name="payload" value="hen" checked />
-                        <span>nexHEN Framework</span>
+                        <input type="radio" name="payload" value="hen" />
+                        <span>PS4-HEN (standard)</span>
                     </label>
                     <label class="opt">
                         <input type="radio" name="payload" value="goldhen" />
                         <span>GoldHEN Layer</span>
                     </label>
                   <label class="opt">
-    <input type="radio" name="payload" value="elfldr_test" />
-    <span>ELF Loader Test</span>
+    <input type="radio" name="payload" value="elfldr_test" checked />
+    <span>NexHEN RC6 (native ELF loader)</span>
 </label>
                     <label class="opt opt-auto">
-                        <input type="checkbox" id="auto" checked />
+                        <input type="checkbox" id="auto" />
                         <span>Auto-Inject Selected Payload</span>
                     </label>
                     <button type="submit" class="btn" id="go">EXECUTE PAYLOAD</button>
@@ -297,7 +297,7 @@
             <h2>SYSTEM LOG</h2>
             <div class="output-container" id="log">
                 <div>[BOOT] Afterglow WebKit Layer Initialized...</div>
-                <div>[READY] Select payload or await auto-injection.</div>
+                <div>[READY] NexHEN RC6 selected. Press EXECUTE PAYLOAD to start manually.</div>
             </div>
         </aside>
     </main>
