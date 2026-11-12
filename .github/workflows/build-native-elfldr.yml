@@ -6,6 +6,8 @@ on:
     paths:
       - "build/patch-elfldr-autofetch.py"
       - ".github/workflows/build-native-elfldr.yml"
+      - "index.html"
+      - "launch.js"
 
 permissions:
   contents: write
@@ -57,8 +59,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           ./make-manifest.sh
-          ./make-manifest.sh
-          git add elfldr.bin elfldr.elf cache.appcache cache.appcache
+          git add elfldr.bin elfldr.elf cache.appcache
           git diff --cached --quiet || git commit -m "Build native NexHEN TCP handoff loader"
           git pull --rebase origin "$GITHUB_REF_NAME"
           git push
