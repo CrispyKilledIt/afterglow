@@ -14,6 +14,10 @@ permissions:
   contents: write
   actions: write
 
+concurrency:
+  group: afterglow-native-loader-build
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-24.04
