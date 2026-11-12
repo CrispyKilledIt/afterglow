@@ -37,7 +37,7 @@ jobs:
           echo "PS4_PAYLOAD_SDK=$RUNNER_TEMP/ps4-payload-sdk" >> "$GITHUB_ENV"
       - name: Patch native bootstrap
         run: |
-          python3 build/patch-elfldr-autofetch.py
+          python3 ../build/patch-elfldr-autofetch.py
         working-directory: elfldr-src
         env:
           PYTHONPATH: ../build
