@@ -159,8 +159,12 @@ if new not in u:
 # short-lived URI control socket (the socket is not NexHEN's stdio).
 srv_path = Path("socksrv.c")
 srv = srv_path.read_text()
+if "int uri_payload = 0;" not in srv:
+    var_anchor = "  int magic = 0;\\n"
+    if var_anchor not in srv:
+        raise SystemExit("socksrv.c magic variable anchor missing")
+    srv = srv.replace(var_anchor, var_anchor + "  int uri_payload = 0;\\n", 1)
 old_uri = """  if(magic == PAYLOAD_MAGIC_FILE || magic == PAYLOAD_MAGIC_HTTP) {
-    uri_payload = 1;
     if(payload_readuri(fd, uri, PATH_MAX)
        || uri_get_content(uri, &buf, &len)) {
       LOG_PERROR("read_uri");
@@ -169,6 +173,7 @@ old_uri = """  if(magic == PAYLOAD_MAGIC_FILE || magic == PAYLOAD_MAGIC_HTTP) {
 
   } else if(magic == PAYLOAD_MAGIC_ELF) {"""
 new_uri = """  if(magic == PAYLOAD_MAGIC_FILE || magic == PAYLOAD_MAGIC_HTTP) {
+    uri_payload = 1;
     if(payload_readuri(fd, uri, PATH_MAX)) {
       LOG_PERROR("read_uri");
       write(fd, "[elfldr.elf] Error reading URI\\n\\r\\0", 34);
