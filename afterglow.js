@@ -2375,9 +2375,13 @@ const mode = (ctx.params && ctx.params.get("mode")) || "";
 
 if (mode === "elfldr_test") {
   const loaderStarted = await loadElfLoader("elfldr.bin");
-  iface.payload = loaderStarted;
+  iface.elfldr = loaderStarted;
+  /* Starting the loader is not proof that its URI fetch or NexHEN launch
+     completed. Keep payload false until the loader can acknowledge that. */
+  iface.payload = false;
   if (loaderStarted) {
-    say("[elfldr] native bootstrap started; it will fetch and launch NexHEN");
+    say("[elfldr] native bootstrap started");
+    say("[elfldr] waiting for loader-side NexHEN fetch and launch");
   } else {
     say("[elfldr] native bootstrap failed to start");
   }
