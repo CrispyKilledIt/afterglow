@@ -73,8 +73,28 @@ function cacheNote() {
   cacheEl.textContent = text;
 }
 
+var cacheReloading = false;
+
 function cacheChanged() {
   cacheNote();
+
+  /* AppCache's updateready event means the new manifest has been downloaded,
+     but the current document still belongs to the old cache. Never start the
+     exploit from that mixed/stale page: switch the cache and reload first. */
+  if (appCache && !cacheReloading) {
+    try {
+      if (appCache.status === appCache.UPDATEREADY) {
+        cacheReloading = true;
+        waitingForCache = false;
+        stopClock();
+        try { appCache.swapCache(); } catch (e) {}
+        if (cacheEl) cacheEl.textContent = "update installed - reopening current build";
+        location.reload();
+        return;
+      }
+    } catch (e) {}
+  }
+
   /* Someone pressed start while the files were still coming down. Go now
      that they are here, rather than making them press again. */
   if (waitingForCache && !cacheBusy()) {
