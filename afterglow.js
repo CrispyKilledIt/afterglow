@@ -2440,13 +2440,10 @@ const mode = (ctx.params && ctx.params.get("mode")) || "";
 if (mode === "elfldr_test") {
   const loaderStarted = await loadElfLoader("elfldr.bin");
 
-  if (loaderStarted) {
-    say("[elfldr] waiting 5 seconds for listener");
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    iface.payload = await sendNexHENToElfLoader();
-  } else {
-    iface.payload = false;
-  }
+  if (mode === "elfldr_test") {
+  const loaderStarted = await loadElfLoader("elfldr.bin");
+  iface.payload = loaderStarted && await sendNexHENToElfLoader();
+} else if (want !== "") {
 } else if (want !== "") {
     : await loadPayload(want || "hen.bin");
 }
