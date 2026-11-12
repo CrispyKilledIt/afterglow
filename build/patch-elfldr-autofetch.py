@@ -243,7 +243,6 @@ new_tail = """  if(buf) {
     } else {
       LOG_PRINTF("Nested ELF payload spawned with pid %d\\n", payload_pid);
       notify("Afterglow: NexHEN core ELF launched (PID %d)", payload_pid);
-      LOG_PRINTF("ELF payload spawned with pid %d\\n", payload_pid);
     }
     free(filename);
     free(args);
