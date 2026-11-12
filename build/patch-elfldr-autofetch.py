@@ -165,7 +165,7 @@ if "int uri_payload = 0;" not in srv:
         raise SystemExit("socksrv.c magic variable anchor missing")
     srv = srv.replace(var_anchor, var_anchor + "  int uri_payload = 0;\n", 1)
 if "#include <errno.h>" not in srv:
-    srv = srv.replace("#include <sys/types.h>\\n", "#include <sys/types.h>\\n#include <errno.h>\\n", 1)
+    srv = srv.replace("#include <sys/types.h>\n", "#include <sys/types.h>\n#include <errno.h>\n", 1)
 old_uri = """  if(magic == PAYLOAD_MAGIC_FILE || magic == PAYLOAD_MAGIC_HTTP) {
     if(payload_readuri(fd, uri, PATH_MAX)
        || uri_get_content(uri, &buf, &len)) {
@@ -234,7 +234,7 @@ new_tail = """  if(buf) {
       notify("Afterglow: NexHEN ELF launch failed");
       write(fd, "[elfldr.elf] Error spawning payload\\n\\r\\0", 38);
     } else {
-      LOG_PRINTF("Payload exec handed off with pid %d\n", payload_pid);
+      LOG_PRINTF("Payload exec handed off with pid %d\\n", payload_pid);
       sleep(2);
       errno = 0;
       int probe_result = kill(payload_pid, 0);
@@ -244,14 +244,14 @@ new_tail = """  if(buf) {
       int status_len;
       if(alive) {
         status_len = snprintf(status, sizeof(status),
-                              "NEXHEN ALIVE pid=%d after 2s\n", payload_pid);
-        LOG_PRINTF("NexHEN process %d survived the 2-second check\n", payload_pid);
+                              "NEXHEN ALIVE pid=%d after 2s\\n", payload_pid);
+        LOG_PRINTF("NexHEN process %d survived the 2-second check\\n", payload_pid);
         notify("Afterglow: NexHEN process alive (PID %d)", payload_pid);
       } else {
         status_len = snprintf(status, sizeof(status),
-                              "NEXHEN EXITED pid=%d errno=%d\n",
+                              "NEXHEN EXITED pid=%d errno=%d\\n",
                               payload_pid, probe_errno);
-        LOG_PRINTF("NexHEN process %d exited before the 2-second check (errno %d)\n",
+        LOG_PRINTF("NexHEN process %d exited before the 2-second check (errno %d)\\n",
                    payload_pid, probe_errno);
         notify("Afterglow: NexHEN exited early (errno %d)", probe_errno);
       }
