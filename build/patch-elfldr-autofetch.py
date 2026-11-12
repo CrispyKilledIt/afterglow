@@ -21,7 +21,7 @@ if "static int\nsend_nexhen_uri" not in s:
 static int
 send_nexhen_uri(void) {
   static const char uri[] =
-      "https://raw.githubusercontent.com/CrispyKilledIt/afterglow/main/"
+      "https://raw.githubusercontent.com/CrispyKilledIt/afterglow/50ee030c6738e43301f852abbaf74f332b64c3d7/"
       "nexHEN.-rc6-codxelf.elf\n";
   struct sockaddr_in addr = {0};
   int fd = -1;
