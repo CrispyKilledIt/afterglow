@@ -1116,9 +1116,12 @@ function pinCore() {
 
 /* Fetch a file once. Both loaders are handed the bytes, so deciding the
    format does not cost a second request. */
-async function fetchBytes(url, tag) {
+async function fetchBytes(url, tag, cacheMode) {
   try {
-    const r = await fetch(url);
+    /* The PS4 WebKit HTTP cache can outlive an AppCache manifest update.
+       Native bootstrap downloads must bypass it explicitly. */
+    const options = cacheMode ? { cache: cacheMode } : undefined;
+    const r = await fetch(url, options);
     if (!r.ok) { say("[" + tag + "] " + url + " HTTP " + r.status); return null; }
     return new Uint8Array(await r.arrayBuffer());
   } catch (e) {
@@ -1277,7 +1280,7 @@ async function loadElfLoader(url) {
      immutable URL and refuse to run anything except the expected build. */
   const expectedBytes = 268095;
   const publishedUrl = url + "?build=595bd54babaec40c40b8ae7911a60fe7";
-  const raw = await fetchBytes(publishedUrl, "elfldr");
+  const raw = await fetchBytes(publishedUrl, "elfldr", "no-store");
   if (raw === null || !raw.length) return false;
   if (raw.length !== expectedBytes) {
     say("[elfldr] stale or incomplete bootstrap: got " + raw.length
