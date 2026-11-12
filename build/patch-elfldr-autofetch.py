@@ -268,9 +268,11 @@ replacements = [
     LOG_PERROR("malloc");
     close(kq);
     return -1;
-  }""", """  if(!(stack = malloc(MB(2)))) {
-    LOG_PERROR("malloc");
-    notify("Afterglow: NexHEN spawn failed allocating stack");
+  }""", """  /* The loader server has a constrained libc heap; map the 2 MB stack. */
+  if((stack = mmap(0, MB(2), PROT_READ | PROT_WRITE,
+                   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)) == MAP_FAILED) {
+    LOG_PERROR("mmap");
+    notify("Afterglow: NexHEN spawn failed mapping thread stack");
     close(kq);
     return -1;
   }"""),
@@ -411,6 +413,9 @@ replacements = [
 for old, new in replacements:
     if new not in elf and old in elf:
         elf = elf.replace(old, new, 1)
+# mmap owns the thread-stack allocation; release it with munmap on every
+# failure path and after the child has attached.
+elf = elf.replace("free(stack);", "munmap(stack, MB(2));")
 elf_path.write_text(elf)
 
 print("Patched bootstrap handshake, HTTP body reads, and payload launch reporting")
