@@ -318,6 +318,96 @@ replacements = [
     kill(pid, SIGKILL);
     return -1;
   }""")
+
+("""  if(mdbg_copyin(pid, &orginstr, brkpoint, sizeof(orginstr))) {
+    LOG_PERROR("mdbg_copyin");
+    pt_detach(pid, SIGKILL);""", """  if(mdbg_copyin(pid, &orginstr, brkpoint, sizeof(orginstr))) {
+    LOG_PERROR("mdbg_copyin");
+    notify("Afterglow: NexHEN spawn failed restoring entry instruction");
+    pt_detach(pid, SIGKILL);"""),
+("""  if(elfldr_set_heap_size(pid, -1)) {
+    LOG_PT_PERROR(pid, "pt_dynlib_process_needed_and_relocate");
+  }""", """  if(elfldr_set_heap_size(pid, -1)) {
+    LOG_PT_PERROR(pid, "pt_dynlib_process_needed_and_relocate");
+    notify("Afterglow: NexHEN warning setting process heap size");
+  }"""),
+("""  if(!(ctx.base_mirror = malloc(ctx.base_size))) {
+    LOG_PERROR("malloc");
+    return 0;
+  }""", """  if(!(ctx.base_mirror = malloc(ctx.base_size))) {
+    LOG_PERROR("malloc");
+    notify("Afterglow: NexHEN ELF load failed allocating mirror");
+    return 0;
+  }"""),
+("""     == -1) {
+    LOG_PT_PERROR(pid, "pt_mmap");
+    free(ctx.base_mirror);""", """     == -1) {
+    LOG_PT_PERROR(pid, "pt_mmap");
+    notify("Afterglow: NexHEN ELF load failed mapping target memory");
+    free(ctx.base_mirror);"""),
+("""  if(mdbg_copyin(ctx.pid, ctx.base_mirror, ctx.base_addr, ctx.base_size)) {
+    LOG_PERROR("mdbg_copyin");
+    error = 1;
+  }""", """  if(mdbg_copyin(ctx.pid, ctx.base_mirror, ctx.base_addr, ctx.base_size)) {
+    LOG_PERROR("mdbg_copyin");
+    notify("Afterglow: NexHEN ELF load failed copying segments");
+    error = 1;
+  }"""),
+("""      LOG_PT_PERROR(pid, "pt_mprotect");
+      error = 1;""", """      LOG_PT_PERROR(pid, "pt_mprotect");
+      notify("Afterglow: NexHEN ELF load failed setting segment permissions");
+      error = 1;"""),
+("""  if(pt_msync(pid, ctx.base_addr, ctx.base_size, MS_SYNC)) {
+    LOG_PT_PERROR(pid, "pt_msync");
+    error = 1;
+  }""", """  if(pt_msync(pid, ctx.base_addr, ctx.base_size, MS_SYNC)) {
+    LOG_PT_PERROR(pid, "pt_msync");
+    notify("Afterglow: NexHEN ELF load failed syncing segments");
+    error = 1;
+  }"""),
+("""  if(error) {
+    pt_munmap(pid, ctx.base_addr, ctx.base_size);
+    return 0;
+  }""", """  if(error) {
+    notify("Afterglow: NexHEN ELF load aborted after a segment error");
+    pt_munmap(pid, ctx.base_addr, ctx.base_size);
+    return 0;
+  }"""),
+("""  if(pt_getregs(pid, &r)) {
+    LOG_PERROR("pt_getregs");
+    return -1;
+  }""", """  if(pt_getregs(pid, &r)) {
+    LOG_PERROR("pt_getregs");
+    notify("Afterglow: NexHEN exec failed reading process registers");
+    return -1;
+  }"""),
+("""  if(!(entry = elfldr_load(pid, elf))) {
+    LOG_PUTS("elfldr_load failed");
+    return -1;
+  }""", """  if(!(entry = elfldr_load(pid, elf))) {
+    LOG_PUTS("elfldr_load failed");
+    notify("Afterglow: NexHEN exec failed loading ELF image");
+    return -1;
+  }"""),
+("""  if(pt_setregs(pid, &r)) {
+    LOG_PERROR("pt_setregs");
+    pt_detach(pid, SIGKILL);""", """  if(pt_setregs(pid, &r)) {
+    LOG_PERROR("pt_setregs");
+    notify("Afterglow: NexHEN exec failed setting entry registers");
+    pt_detach(pid, SIGKILL);"""),
+("""  if(elfldr_raise_privileges(pid)) {
+    LOG_PUTS("Unable to raise privileges");
+    pt_detach(pid, SIGKILL);""", """  if(elfldr_raise_privileges(pid)) {
+    LOG_PUTS("Unable to raise privileges");
+    notify("Afterglow: NexHEN exec failed setting process privileges");
+    pt_detach(pid, SIGKILL);"""),
+("""  if(elfldr_prepare_exec(pid, elf)) {
+    error = -1;
+  }""", """  if(elfldr_prepare_exec(pid, elf)) {
+    notify("Afterglow: NexHEN exec preparation failed");
+    error = -1;
+  }""")
+
 ]
 for old, new in replacements:
     if new not in elf and old in elf:
