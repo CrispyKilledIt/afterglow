@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Patch upstream elfldr bootstrap to fetch NexHEN through elfldr's native URI protocol."""
+"""Patch upstream elfldr to fetch NexHEN and report the actual launch result."""
 from pathlib import Path
 
+# Bootstrap-side TCP client and visible status reporting.
 p = Path("bootstrap-elf.c")
 s = p.read_text()
 needle = '#include <signal.h>\n'
 addition = '''#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 '''
 if "static int\nsend_nexhen_uri" not in s:
@@ -16,14 +18,15 @@ if "static int\nsend_nexhen_uri" not in s:
     s = s.replace(needle, needle + addition, 1)
     anchor = 'int\nmain(void) {'
     helper = r"""
-/* Send a newline-terminated HTTP(S) URI to elfldr's raw TCP socket.
- * elfldr recognizes the first four bytes "http" as its URI protocol. */
+/* Send a newline-terminated HTTPS URI to elfldr's raw TCP socket, then wait
+ * for an explicit fetch/spawn result. */
 static int
 send_nexhen_uri(void) {
   static const char uri[] =
       "https://raw.githubusercontent.com/CrispyKilledIt/afterglow/50ee030c6738e43301f852abbaf74f332b64c3d7/"
       "nexHEN.-rc6-codxelf.elf\n";
   struct sockaddr_in addr = {0};
+  struct timeval timeout = {180, 0};
   int fd = -1;
 
   addr.sin_family = AF_INET;
@@ -32,8 +35,8 @@ send_nexhen_uri(void) {
     return -1;
   }
 
-  /* elfldr_spawn() returns after creating the server process; allow it to bind. */
-  for(int i = 0; i < 40; i++) {
+  /* Wait for the child server to bind before sending the request. */
+  for(int i = 0; i < 60; i++) {
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if(fd >= 0 && connect(fd, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
       break;
@@ -46,8 +49,13 @@ send_nexhen_uri(void) {
   }
   if(fd < 0) {
     LOG_PUTS("Could not connect to local ELF loader on port 9021");
+    notify("Afterglow: ELF loader did not open port 9021");
     return -1;
   }
+
+  setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+  setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+  setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &(int){1}, sizeof(int));
 
   size_t off = 0;
   while(off < sizeof(uri) - 1) {
@@ -55,32 +63,57 @@ send_nexhen_uri(void) {
     if(n <= 0) {
       close(fd);
       LOG_PUTS("Failed sending NexHEN URI to ELF loader");
+      notify("Afterglow: failed to send NexHEN request");
       return -1;
     }
     off += (size_t)n;
   }
 
+  shutdown(fd, SHUT_WR);
+  char response[512] = {0};
+  size_t used = 0;
+  while(used < sizeof(response) - 1) {
+    ssize_t n = recv(fd, response + used, sizeof(response) - 1 - used, 0);
+    if(n <= 0) break;
+    used += (size_t)n;
+    if(memchr(response, '\n', used)) break;
+  }
+  response[used] = 0;
   close(fd);
-  LOG_PUTS("NexHEN URI handed to ELF loader");
-  return 0;
+
+  if(!used) {
+    LOG_PUTS("ELF loader returned no fetch/launch acknowledgement");
+    notify("Afterglow: no response from NexHEN loader");
+    return -1;
+  }
+
+  LOG_PRINTF("NexHEN loader response: %s", response);
+  notify("Afterglow: %s", response);
+  return strstr(response, "NEXHEN STARTED") ? 0 : -1;
 }
 
 """
     if anchor not in s:
         raise SystemExit("bootstrap main anchor missing")
     s = s.replace(anchor, helper + anchor, 1)
-# call after elfldr_spawn has started child, before restoring credentials
+
 needle2 = '    err = elfldr_spawn(-1, argv, socksrv_elf, socksrv_elf_len);'
-replace2 = needle2 + '\n    if(err > 0) {\n      send_nexhen_uri();\n    }'
+replace2 = needle2 + '''
+    if(err > 0) {
+      LOG_PRINTF("ELF loader server process started with pid %d\\\\n", err);
+      notify("Afterglow: ELF loader server started");
+      send_nexhen_uri();
+    } else {
+      LOG_PRINTF("ELF loader server failed to start: %d\\\\n", err);
+      notify("Afterglow: ELF loader server failed");
+    }'''
 if "send_nexhen_uri();" not in s:
     if needle2 not in s:
         raise SystemExit("elfldr_spawn anchor missing")
     s = s.replace(needle2, replace2, 1)
 p.write_text(s)
 
-# The upstream HTTP reader requested the entire content length only once and
-# used a precedence-broken comparison that never detected short reads.
-# Read until the advertised length is complete, failing closed on EOF/errors.
+# Fix short HTTP reads and reject empty response bodies.
 uri_path = Path("uri.c")
 u = uri_path.read_text()
 old = """  if(!len || status != 200) {
@@ -121,12 +154,40 @@ if new not in u:
         raise SystemExit("uri.c HTTP read anchor missing; refusing partial patch")
     u = u.replace(old, new, 1)
     uri_path.write_text(u)
-    print("Patched uri.c: read full HTTP response body")
 
-# Add server-side evidence for URL fetch and ELF launch to the PS4 kernel log.
+# Add fetch validation, explicit status replies, and detach NexHEN from the
+# short-lived URI control socket (the socket is not NexHEN's stdio).
 srv_path = Path("socksrv.c")
 srv = srv_path.read_text()
-old2 = """  if(buf) {
+old_uri = """  if(magic == PAYLOAD_MAGIC_FILE || magic == PAYLOAD_MAGIC_HTTP) {
+    if(payload_readuri(fd, uri, PATH_MAX)
+       || uri_get_content(uri, &buf, &len)) {
+      LOG_PERROR("read_uri");
+      write(fd, "[elfldr.elf] Error reading URI payload\\\\n\\\\r\\\\0", 41);
+    }
+
+  } else if(magic == PAYLOAD_MAGIC_ELF) {"""
+new_uri = """  if(magic == PAYLOAD_MAGIC_FILE || magic == PAYLOAD_MAGIC_HTTP) {
+    if(payload_readuri(fd, uri, PATH_MAX)) {
+      LOG_PERROR("read_uri");
+      write(fd, "[elfldr.elf] Error reading URI\\\\n\\\\r\\\\0", 34);
+      return;
+    }
+    LOG_PRINTF("Fetching URI payload: %s\\\\n", uri);
+    if(uri_get_content(uri, &buf, &len)) {
+      LOG_PERROR("uri_get_content");
+      notify("Afterglow: NexHEN download failed");
+      write(fd, "[elfldr.elf] URI download failed\\\\n\\\\r\\\\0", 38);
+      return;
+    }
+
+  } else if(magic == PAYLOAD_MAGIC_ELF) {"""
+if new_uri not in srv:
+    if old_uri not in srv:
+        raise SystemExit("socksrv.c URI branch anchor missing; refusing partial patch")
+    srv = srv.replace(old_uri, new_uri, 1)
+
+old_tail = """  if(buf) {
     if(!(filename = uri_get_filename(uri))) {
       filename = strdup("payload.elf");
     }
@@ -134,18 +195,21 @@ old2 = """  if(buf) {
       args = strdup("");
     }
     if(payload_spawn(filename, args, fd, buf, len) < 0) {
-      write(fd, "[elfldr.elf] Error spawning payload\\n\\r\\0", 38);
+      write(fd, "[elfldr.elf] Error spawning payload\\\\n\\\\r\\\\0", 38);
     }
     free(filename);
     free(args);
     free(buf);
   }
 """
-new2 = """  if(buf) {
-    LOG_PRINTF("Fetched payload: %zu bytes\\n", len);
-    if(len >= 4 && buf[0] == 0x7f && buf[1] == 'E' && buf[2] == 'L' && buf[3] == 'F' && elfldr_sanity_check(buf, len) != 0) {
+new_tail = """  if(buf) {
+    LOG_PRINTF("Fetched payload: %zu bytes\\\\n", len);
+    notify("Afterglow: downloaded payload (%zu bytes)", len);
+    if(len < 4 || buf[0] != 0x7f || buf[1] != 'E' || buf[2] != 'L' || buf[3] != 'F'
+       || elfldr_sanity_check(buf, len) != 0) {
       LOG_PUTS("ELF sanity check failed");
-      write(fd, "[elfldr.elf] Invalid ELF payload\\n\\r\\0", 37);
+      notify("Afterglow: downloaded file is not a valid ELF");
+      write(fd, "[elfldr.elf] Invalid ELF payload\\\\n\\\\r\\\\0", 37);
       free(buf);
       return;
     }
@@ -155,24 +219,29 @@ new2 = """  if(buf) {
     if(!(args = uri_get_param(uri, "args"))) {
       args = strdup("");
     }
-    pid_t payload_pid = payload_spawn(filename, args, fd, buf, len);
+    /* A URI request's sender is a control channel, not NexHEN stdio. */
+    pid_t payload_pid = payload_spawn(filename, args, -1, buf, len);
     if(payload_pid < 0) {
       LOG_PUTS("Error spawning payload");
-      write(fd, "[elfldr.elf] Error spawning payload\\n\\r\\0", 38);
+      notify("Afterglow: NexHEN ELF launch failed");
+      write(fd, "[elfldr.elf] Error spawning payload\\\\n\\\\r\\\\0", 38);
     } else {
-      LOG_PRINTF("Payload spawned with pid %d\\n", payload_pid);
+      char status[128];
+      int status_len = snprintf(status, sizeof(status),
+                                "NEXHEN STARTED pid=%d\\\\n", payload_pid);
+      LOG_PRINTF("Payload spawned with pid %d\\\\n", payload_pid);
+      notify("Afterglow: NexHEN started (PID %d)", payload_pid);
+      write(fd, status, status_len);
     }
     free(filename);
     free(args);
     free(buf);
   }
 """
-if new2 not in srv:
-    if old2 not in srv:
-        raise SystemExit("socksrv.c payload anchor missing; refusing partial patch")
-    srv = srv.replace(old2, new2, 1)
-    srv_path.write_text(srv)
-    print("Patched socksrv.c: log fetch size, validate ELF, log spawn result")
+if new_tail not in srv:
+    if old_tail not in srv:
+        raise SystemExit("socksrv.c payload branch anchor missing; refusing partial patch")
+    srv = srv.replace(old_tail, new_tail, 1)
+srv_path.write_text(srv)
 
-
-print("Patched bootstrap-elf.c")
+print("Patched bootstrap handshake, HTTP body reads, and payload launch reporting")
