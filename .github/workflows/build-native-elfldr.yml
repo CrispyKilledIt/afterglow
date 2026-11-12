@@ -67,6 +67,13 @@ jobs:
             echo "--- firmware, startup, and service strings ---"
             strings -a -n 5 "$f" | grep -Ei 'firmware|unsupported|NexHEN|GoldHEN|14\.00|version|kernel|overlay|menu|ftp|plugin|error|failed|init' | head -160 || true
           done
+          echo "--- enforce PS4 payload selection ---"
+          grep -F "nexHEN-ps4.elf" build/patch-elfldr-autofetch.py
+          strings -a -n 5 nexHEN-ps4.elf | grep -F "[nexHEN stub] PS4 v1.00 build 118"
+          if strings -a -n 5 nexHEN-ps4.elf | grep -F "PS5 v1.00"; then
+            echo "ERROR: selected NexHEN payload is a PS5 build"
+            exit 1
+          fi
       - name: Commit tested loader binaries to this branch
         run: |
           install -m 0644 elfldr-src/elfldr.bin ./elfldr.bin
