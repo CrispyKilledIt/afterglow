@@ -1291,159 +1291,57 @@ const NEXHEN_RC6_URL =
 
 
 async function sendNexHENToElfLoader() {
-  let fd = -1;
-
   try {
-    say("[elfldr] waiting for local loader");
+    say("[elfldr] downloading NexHEN ELF");
 
-    const addr = alloc(16);
-    addr.u8.set([
-      16, 2, 0x23, 0x3d,
-      127, 0, 0, 1,
-      0, 0, 0, 0, 0, 0, 0, 0
-    ]);
-
-    let connected = false;
-
-    for (let attempt = 1; attempt <= 20; attempt++) {
-      fd = sc(S.socket, 2, 1, 0).i32;
-
-      if (fd < 0) {
-        say("[elfldr] socket failed: " + fd +
-            " errno=" + host().errno());
-        return false;
-      }
-
-      const result = sc(S.connect, fd, addr.at, 16).i32;
-
-      if (result === 0) {
-        connected = true;
-        say("[elfldr] connected on attempt " + attempt);
-        break;
-      }
-
-      const err = host().errno();
-      say("[elfldr] connect attempt " + attempt +
-          " failed: errno=" + err);
-
-      sc(S.close, fd);
-      fd = -1;
-
-      if (err !== 61) {
-        say("[elfldr] unexpected connection error");
-        return false;
-      }
-
-      if (attempt < 20) {
-        await new Promise(resolve => setTimeout(resolve, 250));
-      }
-    }
-
-    if (!connected) {
-      say("[elfldr] loader did not accept connection");
+    const response = await fetch(NEXHEN_RC6_URL);
+    if (!response.ok) {
+      say("[elfldr] download failed: HTTP " + response.status);
       return false;
     }
 
-    // Set a 30-second receive timeout.
-    const timeout = alloc(16);
-    timeout.dv.setBigInt64(0, 30n, true);
-    timeout.dv.setBigInt64(8, 0n, true);
-
-    const timeoutResult = sc(
-      S.setsockopt, fd, 0xffff, 0x1006, timeout.at, 16
-    ).i32;
-
-    if (timeoutResult !== 0) {
-      say("[elfldr] receive timeout setup failed: errno=" +
-          host().errno());
+    const bytes = await response.arrayBuffer();
+    if (!bytes || bytes.byteLength === 0) {
+      say("[elfldr] downloaded file is empty");
       return false;
     }
 
-    const url = NEXHEN_RC6_URL + "\n";
-    const bytes = new Uint8Array(url.length);
+    say("[elfldr] sending " + bytes.byteLength + " bytes using HTTP POST");
 
-    for (let i = 0; i < url.length; i++) {
-      bytes[i] = url.charCodeAt(i);
-    }
+    return await new Promise(resolve => {
+      const xhr = new XMLHttpRequest();
 
-    const data = alloc(bytes.length);
-    wrbuf(data.at, bytes);
+      xhr.open(
+        "POST",
+        "http://127.0.0.1:9021/nexHEN.-rc6-codxelf.elf?pipe=0",
+        true
+      );
 
-    let sent = 0;
+      xhr.setRequestHeader("Content-Type", "text/plain");
+      xhr.timeout = 30000;
 
-    while (sent < bytes.length) {
-      const count = sc(
-        S.write,
-        fd,
-        plus(data.at, sent),
-        bytes.length - sent
-      ).i32;
+      xhr.onload = function () {
+        say("[elfldr] HTTP status: " + xhr.status);
+        say("[elfldr] loader response: " + xhr.responseText);
+        resolve(xhr.status === 200 || xhr.status === 202);
+      };
 
-      if (count <= 0) {
-        say("[elfldr] TCP write failed: " + count +
-            " errno=" + host().errno());
-        return false;
-      }
+      xhr.onerror = function () {
+        say("[elfldr] HTTP upload failed");
+        resolve(false);
+      };
 
-      sent += count;
-    }
+      xhr.ontimeout = function () {
+        say("[elfldr] HTTP upload timed out");
+        resolve(false);
+      };
 
-    say("[elfldr] URL sent; waiting for loader response");
-
-    const reply = alloc(256);
-    let received = 0;
-    let closed = false;
-
-    while (received < 256) {
-      const count = sc(
-        S.read,
-        fd,
-        plus(reply.at, received),
-        256 - received
-      ).i32;
-
-      if (count === 0) {
-        closed = true;
-        break;
-      }
-
-      if (count < 0) {
-        say("[elfldr] response read failed: errno=" +
-            host().errno());
-        return false;
-      }
-
-      received += count;
-    }
-
-    let message = "";
-
-    for (let i = 0; i < received; i++) {
-      const ch = reply.u8[i];
-      if (ch !== 0) message += String.fromCharCode(ch);
-    }
-
-    if (message.length > 0) {
-      say("[elfldr] loader response: " + message);
-      return false;
-    }
-
-    if (closed) {
-      say("[elfldr] loader closed connection without an error");
-      return true;
-    }
-
-    say("[elfldr] response exceeded buffer");
-    return false;
+      xhr.send(bytes);
+    });
 
   } catch (e) {
-    say("[elfldr] sender error: " + String(e));
+    say("[elfldr] error: " + (e && e.message ? e.message : e));
     return false;
-
-  } finally {
-    if (fd >= 0) {
-      sc(S.close, fd);
-    }
   }
 }
 
