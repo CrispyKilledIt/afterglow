@@ -57,6 +57,16 @@ jobs:
           test -s elfldr.bin
           test -s elfldr.elf
           file elfldr.bin elfldr.elf
+      - name: Inspect NexHEN ELF compatibility
+        run: |
+          for f in nexHEN.-rc6-codxelf.elf nexHEN-ps4.elf; do
+            echo "===== $f ====="
+            file "$f"
+            sha256sum "$f"
+            readelf -h -l -d "$f" || true
+            echo "--- firmware, startup, and service strings ---"
+            strings -a -n 5 "$f" | grep -Ei 'firmware|unsupported|NexHEN|GoldHEN|14\.00|version|kernel|overlay|menu|ftp|plugin|error|failed|init' | head -160 || true
+          done
       - name: Commit tested loader binaries to this branch
         run: |
           install -m 0644 elfldr-src/elfldr.bin ./elfldr.bin
