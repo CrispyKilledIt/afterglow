@@ -1276,7 +1276,7 @@ async function loadElfLoader(url) {
      even after a manifest deployment. Give every published binary an
      immutable URL and refuse to run anything except the expected build. */
   const expectedBytes = 268095;
-  const publishedUrl = url + "?build=37a4b6c94af84f2b7e9466cbd897d966";
+  const publishedUrl = url + "?build=595bd54babaec40c40b8ae7911a60fe7";
   const raw = await fetchBytes(publishedUrl, "elfldr");
   if (raw === null || !raw.length) return false;
   if (raw.length !== expectedBytes) {
