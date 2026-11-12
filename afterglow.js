@@ -1277,8 +1277,8 @@ async function loadPayload(url, preloaded) {
 async function loadElfLoader(url) {
   /* Match the exact size of the committed 14.00 ELF-loader bootstrap.
      A mismatch is a real truncation/version error, not a cache guess. */
-  const expectedBytes = 264876;
-  const publishedUrl = url + "?build=cc9ff0a6d1481712e76622b0e0dac5b2";
+  const expectedBytes = 265516;
+  const publishedUrl = url + "?build=2956bf8df78a5c9d60b7c0f8eb506282";
   const raw = await fetchBytes(publishedUrl, "elfldr", "no-store");
   if (raw === null || !raw.length) return false;
   if (raw.length !== expectedBytes) {
