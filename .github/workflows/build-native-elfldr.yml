@@ -6,9 +6,6 @@ on:
     paths:
       - "build/patch-elfldr-autofetch.py"
       - ".github/workflows/build-native-elfldr.yml"
-      - "index.html"
-      - "launch.js"
-      - "afterglow.js"
 
 permissions:
   contents: write
