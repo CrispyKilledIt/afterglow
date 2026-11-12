@@ -163,7 +163,7 @@ if "int uri_payload = 0;" not in srv:
     var_anchor = "  int magic = 0;\n"
     if var_anchor not in srv:
         raise SystemExit("socksrv.c magic variable anchor missing")
-    srv = srv.replace(var_anchor, var_anchor + "  int uri_payload = 0;\\n", 1)
+    srv = srv.replace(var_anchor, var_anchor + "  int uri_payload = 0;\n", 1)
 old_uri = """  if(magic == PAYLOAD_MAGIC_FILE || magic == PAYLOAD_MAGIC_HTTP) {
     if(payload_readuri(fd, uri, PATH_MAX)
        || uri_get_content(uri, &buf, &len)) {
