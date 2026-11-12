@@ -176,14 +176,14 @@ new_uri = """  if(magic == PAYLOAD_MAGIC_FILE || magic == PAYLOAD_MAGIC_HTTP) {
     uri_payload = 1;
     if(payload_readuri(fd, uri, PATH_MAX)) {
       LOG_PERROR("read_uri");
-      write(fd, "[elfldr.elf] Error reading URI\\n\\r\\0", 34);
+      write(fd, "[elfldr.elf] Error reading URI\\n\\r\\0", sizeof("[elfldr.elf] Error reading URI\\n\\r\\0") - 1);
       return;
     }
     LOG_PRINTF("Fetching URI payload: %s\\n", uri);
     if(uri_get_content(uri, &buf, &len)) {
       LOG_PERROR("uri_get_content");
       notify("Afterglow: NexHEN download failed");
-      write(fd, "[elfldr.elf] URI download failed\\n\\r\\0", 38);
+      write(fd, "[elfldr.elf] URI download failed\\n\\r\\0", sizeof("[elfldr.elf] URI download failed\\n\\r\\0") - 1);
       return;
     }
 
@@ -215,7 +215,7 @@ new_tail = """  if(buf) {
        || elfldr_sanity_check(buf, len) != 0) {
       LOG_PUTS("ELF sanity check failed");
       notify("Afterglow: downloaded file is not a valid ELF");
-      write(fd, "[elfldr.elf] Invalid ELF payload\\n\\r\\0", 37);
+      write(fd, "[elfldr.elf] Invalid ELF payload\\n\\r\\0", sizeof("[elfldr.elf] Invalid ELF payload\\n\\r\\0") - 1);
       free(buf);
       return;
     }
