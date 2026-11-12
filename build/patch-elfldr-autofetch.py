@@ -100,11 +100,11 @@ send_nexhen_uri(void) {
 needle2 = '    err = elfldr_spawn(-1, argv, socksrv_elf, socksrv_elf_len);'
 replace2 = needle2 + '''
     if(err > 0) {
-      LOG_PRINTF("ELF loader server process started with pid %d\\\\n", err);
+      LOG_PRINTF("ELF loader server process started with pid %d\\n", err);
       notify("Afterglow: ELF loader server started");
       send_nexhen_uri();
     } else {
-      LOG_PRINTF("ELF loader server failed to start: %d\\\\n", err);
+      LOG_PRINTF("ELF loader server failed to start: %d\\n", err);
       notify("Afterglow: ELF loader server failed");
     }'''
 if "send_nexhen_uri();" not in s:
@@ -160,24 +160,25 @@ if new not in u:
 srv_path = Path("socksrv.c")
 srv = srv_path.read_text()
 old_uri = """  if(magic == PAYLOAD_MAGIC_FILE || magic == PAYLOAD_MAGIC_HTTP) {
+    uri_payload = 1;
     if(payload_readuri(fd, uri, PATH_MAX)
        || uri_get_content(uri, &buf, &len)) {
       LOG_PERROR("read_uri");
-      write(fd, "[elfldr.elf] Error reading URI payload\\\\n\\\\r\\\\0", 41);
+      write(fd, "[elfldr.elf] Error reading URI payload\\n\\r\\0", 41);
     }
 
   } else if(magic == PAYLOAD_MAGIC_ELF) {"""
 new_uri = """  if(magic == PAYLOAD_MAGIC_FILE || magic == PAYLOAD_MAGIC_HTTP) {
     if(payload_readuri(fd, uri, PATH_MAX)) {
       LOG_PERROR("read_uri");
-      write(fd, "[elfldr.elf] Error reading URI\\\\n\\\\r\\\\0", 34);
+      write(fd, "[elfldr.elf] Error reading URI\\n\\r\\0", 34);
       return;
     }
-    LOG_PRINTF("Fetching URI payload: %s\\\\n", uri);
+    LOG_PRINTF("Fetching URI payload: %s\\n", uri);
     if(uri_get_content(uri, &buf, &len)) {
       LOG_PERROR("uri_get_content");
       notify("Afterglow: NexHEN download failed");
-      write(fd, "[elfldr.elf] URI download failed\\\\n\\\\r\\\\0", 38);
+      write(fd, "[elfldr.elf] URI download failed\\n\\r\\0", 38);
       return;
     }
 
@@ -195,7 +196,7 @@ old_tail = """  if(buf) {
       args = strdup("");
     }
     if(payload_spawn(filename, args, fd, buf, len) < 0) {
-      write(fd, "[elfldr.elf] Error spawning payload\\\\n\\\\r\\\\0", 38);
+      write(fd, "[elfldr.elf] Error spawning payload\\n\\r\\0", 38);
     }
     free(filename);
     free(args);
@@ -203,13 +204,13 @@ old_tail = """  if(buf) {
   }
 """
 new_tail = """  if(buf) {
-    LOG_PRINTF("Fetched payload: %zu bytes\\\\n", len);
+    LOG_PRINTF("Fetched payload: %zu bytes\\n", len);
     notify("Afterglow: downloaded payload (%zu bytes)", len);
     if(len < 4 || buf[0] != 0x7f || buf[1] != 'E' || buf[2] != 'L' || buf[3] != 'F'
        || elfldr_sanity_check(buf, len) != 0) {
       LOG_PUTS("ELF sanity check failed");
       notify("Afterglow: downloaded file is not a valid ELF");
-      write(fd, "[elfldr.elf] Invalid ELF payload\\\\n\\\\r\\\\0", 37);
+      write(fd, "[elfldr.elf] Invalid ELF payload\\n\\r\\0", 37);
       free(buf);
       return;
     }
@@ -220,16 +221,16 @@ new_tail = """  if(buf) {
       args = strdup("");
     }
     /* A URI request's sender is a control channel, not NexHEN stdio. */
-    pid_t payload_pid = payload_spawn(filename, args, -1, buf, len);
+    pid_t payload_pid = payload_spawn(filename, args, uri_payload ? -1 : fd, buf, len);
     if(payload_pid < 0) {
       LOG_PUTS("Error spawning payload");
       notify("Afterglow: NexHEN ELF launch failed");
-      write(fd, "[elfldr.elf] Error spawning payload\\\\n\\\\r\\\\0", 38);
+      write(fd, "[elfldr.elf] Error spawning payload\\n\\r\\0", 38);
     } else {
       char status[128];
       int status_len = snprintf(status, sizeof(status),
-                                "NEXHEN STARTED pid=%d\\\\n", payload_pid);
-      LOG_PRINTF("Payload spawned with pid %d\\\\n", payload_pid);
+                                "NEXHEN STARTED pid=%d\\n", payload_pid);
+      LOG_PRINTF("Payload spawned with pid %d\\n", payload_pid);
       notify("Afterglow: NexHEN started (PID %d)", payload_pid);
       write(fd, status, status_len);
     }
