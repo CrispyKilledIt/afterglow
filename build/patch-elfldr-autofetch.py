@@ -89,7 +89,7 @@ send_nexhen_uri(void) {
 
   LOG_PRINTF("NexHEN loader response: %s", response);
   notify("Afterglow: %s", response);
-  return strstr(response, "NEXHEN ALIVE") ? 0 : -1;
+  return strstr(response, "NEXHEN STUB HANDOFF") ? 0 : -1;
 }
 
 """
@@ -234,29 +234,15 @@ new_tail = """  if(buf) {
       notify("Afterglow: NexHEN ELF launch failed");
       write(fd, "[elfldr.elf] Error spawning payload\\n\\r\\0", 38);
     } else if(uri_payload) {
-      LOG_PRINTF("Payload exec handed off with pid %d\\n", payload_pid);
-      sleep(2);
-      errno = 0;
-      int probe_result = kill(payload_pid, 0);
-      int probe_errno = errno;
-      int alive = (probe_result == 0 || probe_errno == EPERM);
-      char status[160];
-      int status_len;
-      if(alive) {
-        status_len = snprintf(status, sizeof(status),
-                              "NEXHEN ALIVE pid=%d after 2s\\n", payload_pid);
-        LOG_PRINTF("NexHEN process %d survived the 2-second check\\n", payload_pid);
-        notify("Afterglow: NexHEN process alive (PID %d)", payload_pid);
-      } else {
-        status_len = snprintf(status, sizeof(status),
-                              "NEXHEN EXITED pid=%d errno=%d\\n",
-                              payload_pid, probe_errno);
-        LOG_PRINTF("NexHEN process %d exited before the 2-second check (errno %d)\\n",
-                   payload_pid, probe_errno);
-        notify("Afterglow: NexHEN exited early (errno %d)", probe_errno);
-      }
+      char status[128];
+      int status_len = snprintf(status, sizeof(status),
+                                "NEXHEN STUB HANDOFF pid=%d\\n", payload_pid);
+      LOG_PRINTF("NexHEN stub handed off with pid %d\\n", payload_pid);
+      notify("Afterglow: NexHEN stub handed off (PID %d)", payload_pid);
       write(fd, status, status_len);
     } else {
+      LOG_PRINTF("Nested ELF payload spawned with pid %d\\n", payload_pid);
+      notify("Afterglow: NexHEN core ELF launched (PID %d)", payload_pid);
       LOG_PRINTF("ELF payload spawned with pid %d\\n", payload_pid);
     }
     free(filename);
