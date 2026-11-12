@@ -56,7 +56,8 @@ jobs:
           install -m 0644 elfldr-src/elfldr.elf ./elfldr.elf
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add elfldr.bin elfldr.elf
+          ./make-manifest.sh
+          git add elfldr.bin elfldr.elf cache.appcache
           git diff --cached --quiet || git commit -m "Build native NexHEN TCP handoff loader"
           git push
       - name: Upload testable payloads
