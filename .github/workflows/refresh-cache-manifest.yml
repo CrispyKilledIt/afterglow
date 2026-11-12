@@ -1,6 +1,7 @@
 name: Refresh PS4 browser cache manifest
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
