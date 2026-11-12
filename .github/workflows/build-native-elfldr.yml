@@ -57,8 +57,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           ./make-manifest.sh
-          git add elfldr.bin elfldr.elf cache.appcache
+          ./make-manifest.sh
+          git add elfldr.bin elfldr.elf cache.appcache cache.appcache
           git diff --cached --quiet || git commit -m "Build native NexHEN TCP handoff loader"
+          git pull --rebase origin "$GITHUB_REF_NAME"
           git push
       - name: Upload testable payloads
         uses: actions/upload-artifact@v4
