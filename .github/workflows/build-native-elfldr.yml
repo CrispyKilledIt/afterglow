@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   build:
@@ -61,11 +62,11 @@ jobs:
           install -m 0644 elfldr-src/elfldr.elf ./elfldr.elf
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          ./make-manifest.sh
-          git add elfldr.bin elfldr.elf cache.appcache
+          git add elfldr.bin elfldr.elf
           git diff --cached --quiet || git commit -m "Build native NexHEN TCP handoff loader"
           git pull --rebase origin "$GITHUB_REF_NAME"
           git push
+          gh workflow run refresh-cache-manifest.yml --ref main
       - name: Upload testable payloads
         uses: actions/upload-artifact@v4
         with:
