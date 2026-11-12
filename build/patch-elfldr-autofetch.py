@@ -143,7 +143,7 @@ old2 = """  if(buf) {
 """
 new2 = """  if(buf) {
     LOG_PRINTF("Fetched payload: %zu bytes\\n", len);
-    if(magic == PAYLOAD_MAGIC_ELF && elfldr_sanity_check(buf, len)) {
+    if(len >= 4 && buf[0] == 0x7f && buf[1] == 'E' && buf[2] == 'L' && buf[3] == 'F' && elfldr_sanity_check(buf, len)) {
       LOG_PUTS("ELF sanity check failed");
       write(fd, "[elfldr.elf] Invalid ELF payload\\n\\r\\0", 37);
       free(buf);
