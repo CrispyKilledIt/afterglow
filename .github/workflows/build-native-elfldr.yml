@@ -23,11 +23,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ps4-payload-dev/elfldr
+          ref: a4817404f5cb2d5c177b05cd5e4548b74e6c2725
           path: elfldr-src
       - name: Checkout PS4 Payload SDK
         uses: actions/checkout@v4
         with:
           repository: ps4-payload-dev/sdk
+          ref: 573b4a0d0d5fa8695cfeee5f2e0447c550035d
           path: sdk
       - name: Install build dependencies
         run: |
