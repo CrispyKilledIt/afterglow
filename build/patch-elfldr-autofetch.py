@@ -250,4 +250,78 @@ if new_tail not in srv:
     srv = srv.replace(old_tail, new_tail, 1)
 srv_path.write_text(srv)
 
+# Instrument fatal stages in elfldr_spawn so the PS4 identifies the exact failure.
+elf_path = Path("elfldr.c")
+elf = elf_path.read_text()
+if '#include "notify.h"' not in elf:
+    elf = elf.replace('#include "log.h"\n', '#include "log.h"\n#include "notify.h"\n', 1)
+replacements = [
+("""  if((kq = kqueue()) < 0) {
+    LOG_PERROR("kqueue");
+    return -1;
+  }""", """  if((kq = kqueue()) < 0) {
+    LOG_PERROR("kqueue");
+    notify("Afterglow: NexHEN spawn failed at kqueue");
+    return -1;
+  }"""),
+("""  if(!(stack = malloc(MB(2)))) {
+    LOG_PERROR("malloc");
+    close(kq);
+    return -1;
+  }""", """  if(!(stack = malloc(MB(2)))) {
+    LOG_PERROR("malloc");
+    notify("Afterglow: NexHEN spawn failed allocating stack");
+    close(kq);
+    return -1;
+  }"""),
+("""     < 0) {
+    LOG_PERROR("rfork_thread");
+    free(stack);""", """     < 0) {
+    LOG_PERROR("rfork_thread");
+    notify("Afterglow: NexHEN spawn failed at rfork_thread");
+    free(stack);"""),
+("""  if(kevent(kq, &evt, 1, &evt, 1, 0) < 0) {
+    LOG_PERROR("kevent");
+    free(stack);""", """  if(kevent(kq, &evt, 1, &evt, 1, 0) < 0) {
+    LOG_PERROR("kevent");
+    notify("Afterglow: NexHEN spawn failed waiting for exec");
+    free(stack);"""),
+("""    LOG_PERROR("pt_attach");
+    kill(pid, SIGKILL);""", """    LOG_PERROR("pt_attach");
+    notify("Afterglow: NexHEN spawn failed attaching to process");
+    kill(pid, SIGKILL);"""),
+("""    LOG_PT_PERROR(pid, "pt_dynlib_process_needed_and_relocate");
+    pt_detach(pid, SIGKILL);""", """    LOG_PT_PERROR(pid, "pt_dynlib_process_needed_and_relocate");
+    notify("Afterglow: NexHEN spawn failed relocating system libraries");
+    pt_detach(pid, SIGKILL);"""),
+("""    LOG_PUTS("kernel_dynlib_entry_addr failed");
+    pt_detach(pid, SIGKILL);""", """    LOG_PUTS("kernel_dynlib_entry_addr failed");
+    notify("Afterglow: NexHEN spawn failed finding entry point");
+    pt_detach(pid, SIGKILL);"""),
+("""    LOG_PERROR("mdbg_copyout");
+    pt_detach(pid, SIGKILL);""", """    LOG_PERROR("mdbg_copyout");
+    notify("Afterglow: NexHEN spawn failed reading entry instruction");
+    pt_detach(pid, SIGKILL);"""),
+("""    LOG_PERROR("pt_continue");
+    pt_detach(pid, SIGKILL);""", """    LOG_PERROR("pt_continue");
+    notify("Afterglow: NexHEN spawn failed resuming process");
+    pt_detach(pid, SIGKILL);"""),
+("""    LOG_PERROR("waitpid");
+    pt_detach(pid, SIGKILL);""", """    LOG_PERROR("waitpid");
+    notify("Afterglow: NexHEN spawn failed waiting for entry breakpoint");
+    pt_detach(pid, SIGKILL);"""),
+("""  if(elfldr_exec(pid, stdio, elf, elf_size)) {
+    kill(pid, SIGKILL);
+    return -1;
+  }""", """  if(elfldr_exec(pid, stdio, elf, elf_size)) {
+    notify("Afterglow: NexHEN spawn failed loading ELF segments or setting registers");
+    kill(pid, SIGKILL);
+    return -1;
+  }""")
+]
+for old, new in replacements:
+    if new not in elf and old in elf:
+        elf = elf.replace(old, new, 1)
+elf_path.write_text(elf)
+
 print("Patched bootstrap handshake, HTTP body reads, and payload launch reporting")
