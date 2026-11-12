@@ -1272,15 +1272,25 @@ async function loadPayload(url, preloaded) {
 /* Start the ELF loader bootstrap using an in-memory
    E9 entry wrapper. The original binary stays unchanged. */
 async function loadElfLoader(url) {
-  const raw = await fetchBytes(url, "elfldr");
+  /* AppCache and the PS4 HTTP cache have both served an older elfldr.bin
+     even after a manifest deployment. Give every published binary an
+     immutable URL and refuse to run anything except the expected build. */
+  const expectedBytes = 268095;
+  const publishedUrl = url + "?build=b80abc2db09364fc496111f46ddb0c1e";
+  const raw = await fetchBytes(publishedUrl, "elfldr");
   if (raw === null || !raw.length) return false;
+  if (raw.length !== expectedBytes) {
+    say("[elfldr] stale or incomplete bootstrap: got " + raw.length
+        + " bytes; expected " + expectedBytes + " -- refusing to start");
+    return false;
+  }
 
   const payload = new Uint8Array(raw.length + 5);
   payload.set([0xe9, 0x00, 0x00, 0x00, 0x00], 0);
   payload.set(raw, 5);
 
-  say("[elfldr] wrapped " + raw.length + "-byte bootstrap; starting");
-  return loadPayload(url, payload);
+  say("[elfldr] verified " + raw.length + "-byte build; starting");
+  return loadPayload(publishedUrl, payload);
 }
 
 /* The native bootstrap now hands NexHEN's HTTPS URI to elfldr over TCP.
