@@ -67,6 +67,8 @@ jobs:
           git pull --rebase origin "$GITHUB_REF_NAME"
           git push
           gh workflow run refresh-cache-manifest.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Upload testable payloads
         uses: actions/upload-artifact@v4
         with:
