@@ -2439,9 +2439,6 @@ const mode = (ctx.params && ctx.params.get("mode")) || "";
 
 if (mode === "elfldr_test") {
   const loaderStarted = await loadElfLoader("elfldr.bin");
-
-  if (mode === "elfldr_test") {
-    const loaderStarted = await loadElfLoader("elfldr.bin");
   iface.payload = loaderStarted && await sendNexHENToElfLoader();
 } else if (want !== "") {
   iface.payload = (mode === "goldhen")
