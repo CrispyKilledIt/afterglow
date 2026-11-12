@@ -253,6 +253,50 @@ if new_tail not in srv:
     if old_tail not in srv:
         raise SystemExit("socksrv.c payload branch anchor missing; refusing partial patch")
     srv = srv.replace(old_tail, new_tail, 1)
+# Report every loader connection and identify whether the stub's second-stage
+# connection reaches the listener and supplies a raw ELF.
+if 'LOG_PRINTF("ELF loader accepted connection' not in srv:
+    conn_anchor = '''  if(setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &optval, sizeof(optval)) < 0) {'''
+    conn_diag = '''  struct sockaddr_in peer = {0};
+  socklen_t peer_len = sizeof(peer);
+  char peer_ip[INET_ADDRSTRLEN] = "unknown";
+  if(getpeername(fd, (struct sockaddr *)&peer, &peer_len) == 0) {
+    inet_ntop(AF_INET, &peer.sin_addr, peer_ip, sizeof(peer_ip));
+  }
+  LOG_PRINTF("ELF loader accepted connection from %s:%u\\n",
+             peer_ip, ntohs(peer.sin_port));
+  notify("Afterglow: loader connection from %s", peer_ip);
+
+'''
+    if conn_anchor not in srv:
+        raise SystemExit("connection diagnostic anchor missing")
+    srv = srv.replace(conn_anchor, conn_diag + conn_anchor, 1)
+
+if 'ELF loader received payload magic' not in srv:
+    magic_anchor = '''  if(magic == PAYLOAD_MAGIC_FILE || magic == PAYLOAD_MAGIC_HTTP) {'''
+    magic_diag = '''  LOG_PRINTF("ELF loader received payload magic 0x%08x\\n", magic);
+  if(magic == PAYLOAD_MAGIC_ELF) {
+    LOG_PUTS("Nested raw ELF connection received from NexHEN stub");
+    notify("Afterglow: NexHEN second-stage ELF received");
+  } else if(magic == PAYLOAD_MAGIC_HTTP || magic == PAYLOAD_MAGIC_FILE) {
+    LOG_PUTS("URI control request received");
+  }
+
+'''
+    if magic_anchor not in srv:
+        raise SystemExit("payload magic diagnostic anchor missing")
+    srv = srv.replace(magic_anchor, magic_diag + magic_anchor, 1)
+
+if 'Afterglow: second-stage ELF read failed' not in srv:
+    old = '''    if(elfldr_read(fd, &buf, &len)) {
+      LOG_PERROR("elfldr_read");'''
+    new = '''    if(elfldr_read(fd, &buf, &len)) {
+      LOG_PERROR("elfldr_read");
+      notify("Afterglow: second-stage ELF read failed");'''
+    if old not in srv:
+        raise SystemExit("ELF read diagnostic anchor missing")
+    srv = srv.replace(old, new, 1)
+
 srv_path.write_text(srv)
 
 # Instrument fatal stages in elfldr_spawn so the PS4 identifies the exact failure.
