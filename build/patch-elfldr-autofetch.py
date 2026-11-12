@@ -160,7 +160,7 @@ if new not in u:
 srv_path = Path("socksrv.c")
 srv = srv_path.read_text()
 if "int uri_payload = 0;" not in srv:
-    var_anchor = "  int magic = 0;\\n"
+    var_anchor = "  int magic = 0;\n"
     if var_anchor not in srv:
         raise SystemExit("socksrv.c magic variable anchor missing")
     srv = srv.replace(var_anchor, var_anchor + "  int uri_payload = 0;\\n", 1)
