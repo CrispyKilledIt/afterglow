@@ -23,7 +23,7 @@ if "static int\nsend_nexhen_uri" not in s:
 static int
 send_nexhen_uri(void) {
   static const char uri[] =
-      "https://raw.githubusercontent.com/CrispyKilledIt/afterglow/main/"
+      "https://raw.githubusercontent.com/CrispyKilledIt/afterglow/4fb106ec683ed5b72744dd8dfe7db9ad4fd7dd82/"
       "nexHEN-ps4.elf\n";
   struct sockaddr_in addr = {0};
   struct timeval timeout = {180, 0};
