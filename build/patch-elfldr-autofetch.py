@@ -163,8 +163,7 @@ if "int uri_payload = 0;" not in srv:
     var_anchor = "  int magic = 0;\n"
     if var_anchor not in srv:
         raise SystemExit("socksrv.c magic variable anchor missing")
-    srv = srv.replace(var_anchor, var_anchor + "  int uri_payload = 0;
-  int elf_buffer_mapped = 0;\n", 1)
+    srv = srv.replace(var_anchor, var_anchor + "  int uri_payload = 0;\n  int elf_buffer_mapped = 0;\n", 1)
 if "#include <errno.h>" not in srv:
     srv = srv.replace("#include <sys/types.h>\n", "#include <sys/types.h>\n#include <errno.h>\n", 1)
 old_uri = """  if(magic == PAYLOAD_MAGIC_FILE || magic == PAYLOAD_MAGIC_HTTP) {
@@ -208,13 +207,8 @@ old_tail = """  if(buf) {
     }
     free(filename);
     free(args);
-    if(elf_buffer_mapped) {
-      munmap(buf, len);
-    } else {
-      free(buf);
-    }
+    free(buf);
   }
-"""
 new_tail = """  if(buf) {
     LOG_PRINTF("Fetched payload: %zu bytes\\n", len);
     notify("Afterglow: downloaded payload (%zu bytes)", len);
@@ -223,7 +217,8 @@ new_tail = """  if(buf) {
       LOG_PUTS("ELF sanity check failed");
       notify("Afterglow: downloaded file is not a valid ELF");
       write(fd, "[elfldr.elf] Invalid ELF payload\\n\\r\\0", sizeof("[elfldr.elf] Invalid ELF payload\\n\\r\\0") - 1);
-      free(buf);
+      if(elf_buffer_mapped) munmap(buf, len);
+      else free(buf);
       return;
     }
     if(!(filename = uri_get_filename(uri))) {
@@ -251,7 +246,11 @@ new_tail = """  if(buf) {
     }
     free(filename);
     free(args);
-    free(buf);
+    if(elf_buffer_mapped) {
+      munmap(buf, len);
+    } else {
+      free(buf);
+    }
   }
 """
 if new_tail not in srv:
