@@ -1,0 +1,37 @@
+[1794534289 pid=69] [Boot] nexHEN PS4 v1.00 build 118 starting
+[1794534289 pid=69] [Boot] Image identity NEXHEN_BOOTSTRAP_V1
+[1794534289 pid=69] [Icons] Extracted 38 of 38 icons to /data/nexHEN/assets/icons/
+[1794534290 pid=69] nexHEN PS4 v1.00 build 118: bootstrapper loaded[1794534290 pid=69] [Boot] Stopping 'SceCloudClientDaemo' (pid 48), where GoldHEN runs its servers and payloads: killed
+[1794534290 pid=69] [Boot] Stopping 'ScePartyDaemon' (pid 45), where GoldHEN runs its servers and payloads: killed
+[1794534290 pid=69] [Relay] ELF 263304 bytes to 127.0.0.1:9021: forwarded (execution not acknowledged)
+[1794534291 pid=69] [Boot] Loader replacement forwarded as independent ELF
+[1794534292 pid=69] [Boot] elfldr listening on 9021
+[1794534292 pid=69] [Kstuff] Preparing PS4HEN patches for firmware 14.00
+[1794534292 pid=69] [Kstuff] Hook conflict at +0x6a39f9 (target=0xffffffff873b7270 expected=0xffffffff873b72b0); unchanged
+[1794534292 pid=69] [Kstuff] Kernel FSELF/FPKG hooks skipped: errno=16 (Device busy)
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=1
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=2
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=3
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=4
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=5
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=6
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=7
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=8
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=9
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=10
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=11
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=12
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=13
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=14
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=15
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20000.bin: pid=41 hooks=16
+[1794534292 pid=69] [Kstuff] Verified 16 ShellCore package/version patches (16 applied, 0 kept from another HEN)
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=1
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS21006.bin: pid=47 hooks=1
+[1794534292 pid=69] [Hook] Saved /system_tmp/hooks_NPXS21006.bin: pid=47 hooks=2
+[1794534292 pid=69] [RemotePlay] Menu patch 1 of 1, service patches 2 of 2
+[1794534292 pid=69] [Boot] kstuff incomplete: errno=16 (Device busy); continuing
+[1794534292 pid=69] nexHEN PS4: package patches incomplete; check bootstrapper log[1794534292 pid=69] [Boot] Starting daemon: 1379968 bytes
+[1794534292 pid=69] [Relay] ELF 1379968 bytes to 127.0.0.1:9021: forwarded (execution not acknowledged)
+[1794534303 pid=69] [Relay] Forwarded nexHEN Daemon, but its process did not appear
+[1794534303 pid=69] nexHEN PS4: could not start daemon[1794534303 pid=69] [Boot] Daemon launch failed: errno=60 (Operation timed out); see loader records above
