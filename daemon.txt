@@ -1,0 +1,71 @@
+[1794543398 pid=75] [Daemon] v1.00 build 118 starting; IPC port 9028
+[1794543398 pid=75] nexHEN PS4: daemon loaded - IPC on port 9028[1794543399 pid=75] [Boot] Update partition unmounted
+[1794543399 pid=75] [Payload] TCP/HTTP ELF/BIN listener on 9090
+[1794543399 pid=75] [Services] binsrv running on port 9090
+[1794543399 pid=75] [Relay] ELF 148304 bytes to 127.0.0.1:9021: forwarded (execution not acknowledged)
+[1794543399 pid=75] [Services] ftpsrv running on port 2121
+[1794543399 pid=75] [Relay] ELF 91208 bytes to 127.0.0.1:9021: forwarded (execution not acknowledged)
+[1794543409 pid=75] [Relay] Forwarded klogsrv.elf, but its process did not appear
+[1794543409 pid=75] [Services] klogsrv failed to start
+[1794543409 pid=75] [PKG] Installer on port 12800; uploads go to /data/nexHEN/pkgs/
+[1794543409 pid=75] [Services] elfldr running on port 9021
+[1794543410 pid=75] [Daemon] ShellUI injection enabled; entering IPC loop on 9028
+[1794543410 pid=75] [ShellUI] Beginning injection attempt
+[1794543410 pid=75] [Inject] Creating managed bootstrap; attaching pid=42
+[1794543410 pid=75] [Inject] ShellUI module libmonosgen-2.0.sprx handle 0x7a
+[1794543410 pid=75] [Inject] ShellUI module libMonoVirtualMachine.sprx not found
+[1794543410 pid=75] [Inject] ShellUI module libMonoVirtualMachineBridge.sprx not found
+[1794543410 pid=75] [Inject] ShellUI module libSceLibcInternal.sprx handle 0x2
+[1794543410 pid=75] [Inject] ShellUI module libkernel_sys.sprx handle 0x2001
+[1794543410 pid=75] [Inject] ShellUI module libSceSystemService.sprx handle 0x7f
+[1794543410 pid=75] [Inject] ShellUI module libkernel.sprx not found
+[1794543410 pid=75] [Inject] ShellUI module libkernel_web.sprx not found
+[1794543410 pid=75] [Loader] Protect image +0 size=0x24000 prot=0x7
+[1794543410 pid=75] [Loader] Protect image +0x24000 size=0xbc000 prot=0x3
+[1794543410 pid=75] [Mono] Resolved 96 ShellUI imports in host modules
+[1794543410 pid=75] [Inject] Creating bootstrap with scePthreadCreate and private TLS
+[1794543410 pid=75] [Inject] Detached after pthread creation; result=0
+[1794543410 pid=75] [Inject] Worker stage=2 unreadable=0 after 0 ms
+[1794543410 pid=75] [Storage] Found 11 package(s), 8 payload(s) and 4 plugin(s); 0 gone since the last scan
+[1794543410 pid=75] [Inject] Worker stage=3 unreadable=0 after 100 ms
+[1794543410 pid=75] [Mono] Worker finished its setup; features=34 target=0x82486a180 callback=0x20f18bc74
+[1794543410 pid=75] [Mono] Installing the UI frame hook
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=2
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=3
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=4
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=5
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=6
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=7
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=8
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=9
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=10
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=11
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=12
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=13
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=14
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=15
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=16
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=17
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=18
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=19
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=20
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=21
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=22
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=23
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=24
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=25
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=26
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=27
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=28
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=29
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=30
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=31
+[1794543410 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=32
+[1794543411 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=33
+[1794543411 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=34
+[1794543411 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=35
+[1794543411 pid=75] [Hook] Saved /system_tmp/hooks_NPXS20001.bin: pid=42 hooks=36
+[1794543411 pid=75] [Mono] UI frame hook installed at 0x82486a180
+[1794543411 pid=75] [Mono] Installed 34 debug/toolbox hooks and patches
+[1794543411 pid=75] [Inject] ShellUI worker acknowledged startup; notification=0
+[1794543411 pid=75] [ShellUI] Injected shellui.elf into SceShellUI

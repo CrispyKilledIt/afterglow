@@ -1,0 +1,100 @@
+[ShellUI] v1.00 build 118 managed pthread initialized
+[ShellUI] Notification sent
+[Mono] Attaching worker to runtime
+[Mono] Worker attached; opening ShellUI assemblies
+[Mono] ShellUI assemblies ready
+[DebugSettings] sceKernelGetUtokenStoreModeForRcmgr = 83f44d460 result=0
+[DebugSettings] sceKernelGetDebugMenuModeForRcmgr = 83f44d100 result=0
+[DebugSettings] sceKernelGetDebugMenuMiniModeForRcmgr = 83f44d1c0 result=0
+[Mono] Sce.Vsh.KernelSysWrapper::IsDevKit = 0x8027b4120
+[Mono] Sce.Vsh.ShellUI.DebugSystem.KeyMonitorTask::IsDebugMenuEnable = 0
+[Mono] Sce.Vsh.ShellUI.Settings.Sbl.SblWrapper::SblRcMgrIsAllowDebugMenuForSettings = 0x80d6c1520
+[Mono] Sce.Vsh.ShellUI.Settings.Sbl.SblWrapper::SblRcMgrIsAllowMinimumDebugMenuForSettings = 0x80d6c1530
+[Mono] System.Reflection.Assembly::GetManifestResourceStream = 0x82e1ceb80
+[Mono] Sce.Vsh.ShellUI.SettingsApplication::StartSettingsPage = 0x81b84e0e0
+[Mono] Sce.Vsh.ShellUI.TopMenu.TopMenuPlugin::GetString = 0x81b9ce770
+[Mono] Sce.Vsh.ShellUI.TopMenu.TopMenuPlugin::setImage = 0x81b9ce520
+[Mono] Sce.Vsh.ShellUI.TopMenu.SystemAreaIconPSPlus::LaunchPlugin = 0x81ba183b0
+[Mono] Sce.Vsh.ShellUI.TopMenu.SystemAreaIconPSPlus::get_LaunchUrl = 0x81ba183a0
+[Mono] Sce.Vsh.ShellUI.Settings.SettingsRoot.SettingsRootHandler::OnPress = 0x81c6eca90
+[Mono] Sce.Vsh.ShellUI.Settings.SettingsRoot.SettingsRootHandler::OnPreCreate = 0x81bc46940
+[Mono] Sce.Vsh.ShellUI.AppSystem.PowerManager::Terminate = 0
+[Rest] PowerManager.Terminate unavailable; rest is detected from the system state only
+[Mono] Sce.Vsh.ShellUI.PadInternal.PadInfo::PostEvent = 0x81b9c51c0
+[Mono] Sce.Vsh.ShellUI.Library.OptionMenuFactory::AddQuitApplication = 0x81c06f6e0
+[Mono] Sce.Vsh.ShellUI.Library.OptionMenuFactory::Build = 0x81c071790
+[Mono] Sce.Vsh.ShellUI.Library.OptionMenuFactory::Add = 0x81c06f530
+[Mono] Sce.Vsh.ShellUI.Settings.Core.UIManager::AddMenuItem = 0x81bd61a60
+[Mono] Sce.Vsh.ShellUI.Settings.Core.UIManager::InsertMenuItem = 0x81bd61a70
+[Mono] Sce.Vsh.ShellUI.Settings.ConsoleSettings.ConsoleInfoPage::OnPageActivating = 0x81bd32400
+[Mono] Sce.Vsh.ShellUI.Settings.ConsoleSettings.ConsoleInfoPage::OnPreCreate = 0x81bd32a80
+[Mono] Sce.Vsh.ShellUI.Library.OptionMenuFactory::AddDebugCheck = 0x81c070230
+[Mono] Sce.Vsh.ShellUI.Library.OptionMenuFactory::AddDebugCheckDisc = 0x81c070280
+[Mono] Sce.Vsh.ShellUI.Library.OptionMenuFactory::AddDebugCheckShareFactoryThemes = 0x81c0702d0
+[Mono] Sce.Vsh.ShellUI.Library.OptionMenuFactory::AddDebugDelete = 0x81c0702f0
+[Mono] Sce.Vsh.ShellUI.Library.OptionMenuFactory::AddDebugPlayGo = 0x81c070540
+[Mono] Sce.Vsh.ShellUI.Library.OptionMenuFactory::AddDebugGenerateCoreFile = 0x81c070830
+[Mono] Sce.Vsh.ShellUI.Library.OptionMenuFactory::AddDebugChangeCurrentSlotNumber = 0x81c070950
+[Mono] Sce.Vsh.ShellUI.Library.OptionMenuFactory::AddDebugSavedataManagement = 0x81c0709a0
+[Options] Hid 8 of 8 developer entries
+[Toolbox] Debug gates and PS Plus shortcut queued
+[Mono] Sce.Vsh.ShellUI.QuickMenu.MainMenuPanel::CreateNormalMenuItemList = 0x81c7c2b50
+[Mono] Sce.Vsh.ShellUI.QuickMenu.CustomMenuPanel::CreateMenuItemList = 0x81bda78d0
+[Mono] Sce.Vsh.ShellUI.QuickMenu.BasicMenuData::OnSelected = 0x81bd7b780
+[Mono] Sce.Vsh.ShellUI.QuickMenu.ResourceAccessor::LoadTextAsset = 0x81bd8cf40
+[QuickMenu] Toolbox and six shortcuts queued
+[Mono] Direct imports ready; PS5 Mono helpers attached to PS4 runtime
+[Pad] UIGamePad resolved
+[Toolbox] Existing home shortcut image and label refreshed
+[TitleIDs] 11 visible game labels
+[Options] Entry "Add to Folder"
+[Options] Entry "Upload/Download Saved Data"
+[Options] Entry "Add to Folder"
+[Options] Entry "Check for Update"
+[Options] Entry "Upload/Download Saved Data"
+[Options] Entry "Add to Folder"
+[Options] Entry "Check for Update"
+[TitleIDs] 12 visible game labels
+[Options] Entry "★ nexHEN Cheats"
+[Options] Entry "★ Delete Update"
+[Options] Entry "Upload/Download Saved Data"
+[Options] Entry "Add to Folder"
+[Options] Entry "Check for Update"
+[Options] Entry "★ nexHEN Cheats"
+[Options] Entry "★ Delete Update"
+[Options] Entry "Upload/Download Saved Data"
+[Options] Entry "Add to Folder"
+[Options] Entry "Check for Update"
+[Options] Entry "★ nexHEN Cheats"
+[Options] Entry "★ Delete Update"
+[Options] Entry "Upload/Download Saved Data"
+[Options] Entry "Add to Folder"
+[Options] Entry "Check for Update"
+[Options] Entry "★ nexHEN Cheats"
+[Options] Entry "★ Delete Update"
+[Options] Entry "Upload/Download Saved Data"
+[Options] Entry "Add to Folder"
+[Options] Entry "Check for Update"
+[Options] Entry "Upload/Download Saved Data"
+[Options] Entry "Add to Folder"
+[Options] Entry "Check for Update"
+[Options] Entry "Upload/Download Saved Data"
+[Options] Entry "Add to Folder"
+[Options] Entry "Check for Update"
+[Options] Entry "Upload/Download Saved Data"
+[Options] Entry "Add to Folder"
+[Options] Entry "Check for Update"
+[Options] Entry "Upload/Download Saved Data"
+[Options] Entry "Add to Folder"
+[Options] Entry "Check for Update"
+[Options] Entry "★ nexHEN Cheats"
+[TitleIDs] 10 visible game labels
+[TitleIDs] 9 visible game labels
+[TitleIDs] 8 visible game labels
+[TitleIDs] 7 visible game labels
+[TitleIDs] 5 visible game labels
+[TitleIDs] 4 visible game labels
+[TitleIDs] 5 visible game labels
+[TitleIDs] 8 visible game labels
+[TitleIDs] 11 visible game labels
+[TitleIDs] 9 visible game labels
