@@ -92,3 +92,29 @@ Relevant public references:
 
 No exploit offsets, hook targets, kernel patch routines, or FSELF/FPKG behavior
 are modified by this diagnostic note.
+
+## Cross-check: the public ps4-hen fix is not a NexHEN Kstuff fix
+
+A second source comparison confirms that the same address correction was
+committed upstream in **Scene-Collective/ps4-hen**:
+
+- Commit `006b38bc17b36f4e55c4b9b5118a03c2e5477320`, titled
+  “Fix sceSblPfsSetKeys_addr offset”, changes the 14.00 value from
+  `0x006272B0` to `0x00627270`.
+- Afterglow's README records the patched `hen.bin` MD5 as
+  `6417a84a72f9c7988f0e33b3ae190542` and explicitly warns against the
+  upstream unpatched MD5 `9aff7544eddef2f8202f72fc633d2be3`.
+
+However, the failing check in the NexHEN log is emitted by the separate
+Kstuff component. The public `ItsJokerZz/ps4-kstuff` 14.00 firmware table
+still lists both PFS call sites with target `0x6272b0`. Therefore, finding
+the ps4-hen correction does **not** prove that NexHEN build 118's Kstuff
+binary contains that correction. The two components must not be conflated.
+
+This narrows the likely mismatch to the Kstuff build/configuration linked into
+NexHEN, but it still does not identify the exact binary revision. No payload
+was changed and no replacement binary is approved by this review.
+
+Additional reference:
+- [Upstream ps4-hen correction commit](https://github.com/Scene-Collective/ps4-hen/commit/006b38bc17b36f4e55c4b9b5118a03c2e5477320)
+
