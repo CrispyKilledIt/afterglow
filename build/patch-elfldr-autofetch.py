@@ -164,6 +164,8 @@ if "int uri_payload = 0;" not in srv:
     if var_anchor not in srv:
         raise SystemExit("socksrv.c magic variable anchor missing")
     srv = srv.replace(var_anchor, var_anchor + "  int uri_payload = 0;\n  int elf_buffer_mapped = 0;\n", 1)
+if "#include <sys/mman.h>" not in srv:
+    srv = srv.replace("#include <sys/types.h>\n", "#include <sys/types.h>\n#include <sys/mman.h>\n", 1)
 if "#include <errno.h>" not in srv:
     srv = srv.replace("#include <sys/types.h>\n", "#include <sys/types.h>\n#include <errno.h>\n", 1)
 old_uri = """  if(magic == PAYLOAD_MAGIC_FILE || magic == PAYLOAD_MAGIC_HTTP) {
