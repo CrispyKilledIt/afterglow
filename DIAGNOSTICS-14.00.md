@@ -118,3 +118,38 @@ was changed and no replacement binary is approved by this review.
 Additional reference:
 - [Upstream ps4-hen correction commit](https://github.com/Scene-Collective/ps4-hen/commit/006b38bc17b36f4e55c4b9b5118a03c2e5477320)
 
+## Stronger provenance lead: public kstuff snapshot is pinned before the fix
+
+The public `ItsJokerZz/ps4-kstuff` repository's `UPSTREAM` file pins
+ps4-hen to commit `d077fb4031cf0e089fb7a233cebeebcd1ed3c68e`
+(“Add 14.00 support”). Its checked-in `source/firmware_table.inc` has
+both PFS call targets set to `0x6272b0`, matching the NexHEN log's
+`expected=0xffffffff9ddf72b0`.
+
+The later ps4-hen correction commit
+`006b38bc17b36f4e55c4b9b5118a03c2e5477320` changes
+`sceSblPfsSetKeys_addr` to `0x00627270`. The kstuff repository's
+generator imports this symbol and both `mountpfs__sceSblPfsSetKeys`
+call targets from ps4-hen, so a kstuff sync/build based on the corrected
+ps4-hen revision should carry the corrected target into its generated table.
+
+This is now a concrete, reproducible source-provenance explanation for why
+the public kstuff table and the console log agree on the stale target. It
+still does not prove that NexHEN build 118 embeds this exact public kstuff
+snapshot; the log's matching diagnostic and table values make it a strong
+candidate, not a verified binary identity.
+
+The public kstuff repository documents a source build, but no verified,
+drop-in replacement for NexHEN build 118 was found. A standalone kstuff
+library is not interchangeable with the full NexHEN payload. Since only
+compiled NexHEN is available, do not replace or patch its binary blindly;
+the safe next step is to obtain a maintainer-built NexHEN revision that
+integrates the corrected kstuff table, or an authenticated build manifest
+that identifies the embedded kstuff revision.
+
+References:
+- [kstuff upstream pin](https://github.com/ItsJokerZz/ps4-kstuff/blob/main/UPSTREAM)
+- [kstuff generated 14.00 firmware table](https://github.com/ItsJokerZz/ps4-kstuff/blob/main/source/firmware_table.inc)
+- [kstuff table generator](https://github.com/ItsJokerZz/ps4-kstuff/blob/main/tools/generate.py)
+- [ps4-hen 14.00 offset correction](https://github.com/Scene-Collective/ps4-hen/commit/006b38bc17b36f4e55c4b9b5118a03c2e5477320)
+
