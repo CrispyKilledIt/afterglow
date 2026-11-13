@@ -163,7 +163,8 @@ if "int uri_payload = 0;" not in srv:
     var_anchor = "  int magic = 0;\n"
     if var_anchor not in srv:
         raise SystemExit("socksrv.c magic variable anchor missing")
-    srv = srv.replace(var_anchor, var_anchor + "  int uri_payload = 0;\n", 1)
+    srv = srv.replace(var_anchor, var_anchor + "  int uri_payload = 0;
+  int elf_buffer_mapped = 0;\n", 1)
 if "#include <errno.h>" not in srv:
     srv = srv.replace("#include <sys/types.h>\n", "#include <sys/types.h>\n#include <errno.h>\n", 1)
 old_uri = """  if(magic == PAYLOAD_MAGIC_FILE || magic == PAYLOAD_MAGIC_HTTP) {
@@ -207,7 +208,11 @@ old_tail = """  if(buf) {
     }
     free(filename);
     free(args);
-    free(buf);
+    if(elf_buffer_mapped) {
+      munmap(buf, len);
+    } else {
+      free(buf);
+    }
   }
 """
 new_tail = """  if(buf) {
@@ -292,7 +297,9 @@ if 'Afterglow: second-stage ELF read failed' not in srv:
       LOG_PERROR("elfldr_read");'''
     new = '''    if(elfldr_read(fd, &buf, &len)) {
       LOG_PERROR("elfldr_read");
-      notify("Afterglow: second-stage ELF read failed");'''
+      notify("Afterglow: second-stage ELF read failed");
+    } else {
+      elf_buffer_mapped = 1;'''
     if old not in srv:
         raise SystemExit("ELF read diagnostic anchor missing")
     srv = srv.replace(old, new, 1)
@@ -496,21 +503,20 @@ elfldr_read(int fd, uint8_t **elf, size_t *elf_size) {
   Elf64_Shdr *shdr;
   Elf64_Ehdr ehdr;
   uint8_t *buf;
-  uint8_t *bak;
-  size_t size;
+  uint8_t *next;
+  size_t size, alloc_size, rem;
   off_t shend;
-  size_t rem;
   ssize_t got;
 
   got = recv(fd, &ehdr, sizeof(ehdr), MSG_WAITALL);
   if(got != sizeof(ehdr)) {
-    LOG_PRINTF("elfldr_read: ELF header recv got %zd of %zu bytes (errno %d)\n",
+    LOG_PRINTF("elfldr_read: ELF header recv got %zd of %zu bytes (errno %d)\\n",
                got, sizeof(ehdr), errno);
     notify("Afterglow: ELF header incomplete (%zd/%zu)", got, sizeof(ehdr));
     return -1;
   }
 
-  LOG_PRINTF("elfldr_read: header ok, class %u, machine %u, shoff %llu, shnum %u, shentsize %u\n",
+  LOG_PRINTF("elfldr_read: header ok, class %u, machine %u, shoff %llu, shnum %u, shentsize %u\\n",
              ehdr.e_ident[EI_CLASS], ehdr.e_machine,
              (unsigned long long)ehdr.e_shoff, ehdr.e_shnum, ehdr.e_shentsize);
 
@@ -539,9 +545,17 @@ elfldr_read(int fd, uint8_t **elf, size_t *elf_size) {
     return -1;
   }
 
-  if(!(buf = malloc(size))) {
-    LOG_PERROR("elfldr_read malloc");
-    notify("Afterglow: cannot allocate second-stage ELF header");
+  /* A scoped mapping is used only for the received ELF buffer. The existing
+     thread-stack and ELF-mirror allocation paths remain unchanged. */
+  alloc_size = size;
+  buf = mmap(0, alloc_size, PROT_READ | PROT_WRITE,
+             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if(buf == MAP_FAILED) {
+    int map_errno = errno;
+    LOG_PRINTF("elfldr_read: mmap failed for %zu bytes (errno %d)\\n",
+               alloc_size, map_errno);
+    notify("Afterglow: ELF buffer map failed (%zu bytes, errno %d)",
+           alloc_size, map_errno);
     return -1;
   }
 
@@ -549,59 +563,60 @@ elfldr_read(int fd, uint8_t **elf, size_t *elf_size) {
   rem = size - sizeof(ehdr);
   got = recv(fd, buf + sizeof(ehdr), rem, MSG_WAITALL);
   if(got != (ssize_t)rem) {
-    LOG_PRINTF("elfldr_read: section table recv got %zd of %zu bytes (errno %d)\n",
+    LOG_PRINTF("elfldr_read: section table recv got %zd of %zu bytes (errno %d)\\n",
                got, rem, errno);
     notify("Afterglow: ELF section table incomplete (%zd/%zu)", got, rem);
-    free(buf);
+    munmap(buf, alloc_size);
     return -1;
   }
 
   shend = (off_t)size;
   shdr = (Elf64_Shdr *)(buf + ehdr.e_shoff);
   for(int i = 0; i < ehdr.e_shnum; i++) {
-    if(shdr[i].sh_type == SHT_NOBITS) {
-      continue;
-    }
+    if(shdr[i].sh_type == SHT_NOBITS) continue;
     if(shdr[i].sh_offset > SIZE_MAX
        || shdr[i].sh_size > SIZE_MAX - (size_t)shdr[i].sh_offset) {
       errno = ENOEXEC;
-      free(buf);
+      munmap(buf, alloc_size);
       notify("Afterglow: invalid ELF section bounds");
       return -1;
     }
     size_t section_end = (size_t)shdr[i].sh_offset + (size_t)shdr[i].sh_size;
-    if(section_end > (size_t)shend) {
-      shend = section_end;
+    if(section_end > (size_t)shend) shend = section_end;
+  }
+
+  if((size_t)shend > size) {
+    size_t full_size = (size_t)shend;
+    next = mmap(0, full_size, PROT_READ | PROT_WRITE,
+                MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if(next == MAP_FAILED) {
+      int map_errno = errno;
+      LOG_PRINTF("elfldr_read: full ELF mmap failed for %zu bytes (errno %d)\\n",
+                 full_size, map_errno);
+      notify("Afterglow: full ELF map failed (%zu bytes, errno %d)",
+             full_size, map_errno);
+      munmap(buf, alloc_size);
+      return -1;
+    }
+    memcpy(next, buf, size);
+    munmap(buf, alloc_size);
+    buf = next;
+    alloc_size = full_size;
+
+    rem = full_size - size;
+    got = recv(fd, buf + size, rem, MSG_WAITALL);
+    if(got != (ssize_t)rem) {
+      LOG_PRINTF("elfldr_read: ELF sections recv got %zd of %zu bytes (errno %d)\\n",
+                 got, rem, errno);
+      notify("Afterglow: ELF sections incomplete (%zd/%zu)", got, rem);
+      munmap(buf, alloc_size);
+      return -1;
     }
   }
 
-  if((size_t)shend <= size) {
-    *elf = buf;
-    *elf_size = size;
-    return 0;
-  }
-
-  bak = buf;
-  if(!(buf = realloc(buf, (size_t)shend))) {
-    free(bak);
-    LOG_PERROR("elfldr_read realloc");
-    notify("Afterglow: cannot allocate full second-stage ELF");
-    return -1;
-  }
-
-  rem = (size_t)shend - size;
-  got = recv(fd, buf + size, rem, MSG_WAITALL);
-  if(got != (ssize_t)rem) {
-    LOG_PRINTF("elfldr_read: ELF sections recv got %zd of %zu bytes (errno %d)\n",
-               got, rem, errno);
-    notify("Afterglow: ELF sections incomplete (%zd/%zu)", got, rem);
-    free(buf);
-    return -1;
-  }
-
   *elf = buf;
-  *elf_size = (size_t)shend;
-  LOG_PRINTF("elfldr_read: received complete ELF (%zu bytes)\n", *elf_size);
+  *elf_size = alloc_size;
+  LOG_PRINTF("elfldr_read: received complete ELF (%zu bytes)\\n", *elf_size);
   notify("Afterglow: second-stage ELF read complete");
   return 0;
 }
